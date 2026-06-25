@@ -905,13 +905,16 @@
   updateTodayCount();
   refreshSyncStatus();
 
+  function maybeSync() { if (spaceCode && navigator.onLine && !document.hidden) syncNow(); }
+
   if (spaceCode) syncNow();
-  setInterval(function () { if (spaceCode && navigator.onLine) syncNow(); }, 45000);
+  // Poll every 10s while the app is in the foreground. Mobile browsers throttle
+  // background timers, so we also sync on focus/visibility/online to catch up promptly.
+  setInterval(maybeSync, 10000);
   window.addEventListener("online", function () { refreshSyncStatus(); if (spaceCode) syncNow(); });
   window.addEventListener("offline", refreshSyncStatus);
-  document.addEventListener("visibilitychange", function () {
-    if (!document.hidden && spaceCode && navigator.onLine) syncNow();
-  });
+  window.addEventListener("focus", maybeSync);
+  document.addEventListener("visibilitychange", maybeSync);
 })();
 </script>
 </body>
