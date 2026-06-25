@@ -23,6 +23,7 @@
     --speech: #5b8cff;
     --spit: #fbbf24;
     --env: #34d399;
+    --arm: #c084fc;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -92,6 +93,7 @@
   .satellite[data-group="speech"].sel { color: var(--speech); box-shadow: 0 0 0 3px rgba(91,140,255,.25); }
   .satellite[data-group="spitting"].sel { color: var(--spit); box-shadow: 0 0 0 3px rgba(251,191,36,.25); }
   .satellite[data-group="environment"].sel { color: var(--env); box-shadow: 0 0 0 3px rgba(52,211,153,.25); }
+  .satellite[data-group="arm"].sel { color: var(--arm); box-shadow: 0 0 0 3px rgba(192,132,252,.25); }
 
   .today-count { margin-top: 18px; color: var(--muted); font-size: 14px; text-align: center; }
   .today-count b { color: var(--text); font-size: 30px; display:block; font-weight: 800; }
@@ -108,7 +110,7 @@
   .fit-row .time { font-size: 17px; font-weight: 700; }
   .fit-row .meta { color: var(--muted); font-size: 12.5px; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 6px; }
   .pill { background: var(--bg2); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 600; }
-  .pill.speech { color: var(--speech); } .pill.spit { color: var(--spit); } .pill.env { color: var(--env); }
+  .pill.speech { color: var(--speech); } .pill.spit { color: var(--spit); } .pill.env { color: var(--env); } .pill.arm { color: var(--arm); }
   .pill.dur { color: var(--text); } .pill.trig { color: var(--warn); }
   .fit-row .chev { margin-left: auto; color: var(--muted); font-size: 20px; }
   .day-head { color: var(--muted); font-size: 13px; font-weight: 700; margin: 18px 0 8px; }
@@ -290,6 +292,7 @@
     { group: "speech",      value: "slurred", label: "Slurred" },
     { group: "speech",      value: "none",    label: "No<br>speech" },
     { group: "spitting",    value: true,      label: "Spitting" },
+    { group: "arm",         value: true,      label: "Arm<br>movements" },
     { group: "environment", value: "home",    label: "Home" },
     { group: "environment", value: "car",     label: "Car" },
     { group: "environment", value: "walking", label: "Walking" },
@@ -352,6 +355,7 @@
       let on = false;
       if (s.group === "speech") on = currentFit.speech === s.value;
       else if (s.group === "spitting") on = currentFit.spitting === true;
+      else if (s.group === "arm") on = currentFit.arm === true;
       else if (s.group === "environment") on = currentFit.environment === s.value;
       el.classList.toggle("sel", on);
     });
@@ -360,6 +364,7 @@
     if (!currentFit) return;
     if (s.group === "speech") currentFit.speech = s.value;
     else if (s.group === "spitting") currentFit.spitting = !currentFit.spitting;
+    else if (s.group === "arm") currentFit.arm = !currentFit.arm;
     else if (s.group === "environment") currentFit.environment = (currentFit.environment === s.value ? null : s.value);
     currentFit.updatedAt = Date.now();
     persistFits();
@@ -372,7 +377,7 @@
     const fit = {
       id: uid(), ts: Date.now(),
       lat: null, lng: null, acc: null,
-      speech: "normal", spitting: false, environment: null,
+      speech: "normal", spitting: false, arm: false, environment: null,
       durationSeconds: null, triggers: [], notes: "",
       by: deviceName || null,
       updatedAt: Date.now(),
@@ -457,6 +462,7 @@
     const pills = [];
     pills.push('<span class="pill speech">' + SPEECH_LBL[f.speech] + '</span>');
     if (f.spitting) pills.push('<span class="pill spit">Spitting</span>');
+    if (f.arm) pills.push('<span class="pill arm">Arm movements</span>');
     if (f.environment) pills.push('<span class="pill env">' + cap(f.environment) + '</span>');
     if (f.durationSeconds != null) pills.push('<span class="pill dur">' + fmtDuration(f.durationSeconds) + '</span>');
     if (f.triggers && f.triggers.length) pills.push('<span class="pill trig">' + f.triggers.length + ' trigger' + (f.triggers.length > 1 ? "s" : "") + '</span>');
@@ -508,6 +514,8 @@
       '<div class="field"><label>Speech</label><div class="chips">' + speechChips + '</div></div>' +
       '<div class="field"><label>Spitting</label><div class="chips">' +
         '<button class="chip spit-chip ' + (f.spitting ? "on" : "") + '" data-spit="1">' + (f.spitting ? "Yes" : "No") + '</button></div></div>' +
+      '<div class="field"><label>Arm movements</label><div class="chips">' +
+        '<button class="chip arm-chip ' + (f.arm ? "on" : "") + '" data-arm="1">' + (f.arm ? "Yes" : "No") + '</button></div></div>' +
       '<div class="field"><label>Environment</label><div class="chips">' + envChips + '</div></div>' +
       '<div class="field"><label>Duration</label><div class="chips">' + durChips +
         '<button class="chip add" id="durCustom">Custom…</button></div></div>' +
@@ -527,6 +535,8 @@
     });
     const spit = sheet.querySelector(".spit-chip");
     if (spit) spit.addEventListener("click", function () { f.spitting = !f.spitting; touch(f); reopen(f); });
+    const arm = sheet.querySelector(".arm-chip");
+    if (arm) arm.addEventListener("click", function () { f.arm = !f.arm; touch(f); reopen(f); });
     sheet.querySelectorAll(".dur-chip").forEach(function (b) {
       b.addEventListener("click", function () { const s = +b.dataset.dur; f.durationSeconds = (f.durationSeconds === s ? null : s); touch(f); reopen(f); });
     });
@@ -662,6 +672,7 @@
       if (dk !== lastDay) { out += "— " + new Date(f.ts).toLocaleDateString() + " —\n"; lastDay = dk; }
       const parts = [fmtTime(f.ts), SPEECH_LBL[f.speech]];
       if (f.spitting) parts.push("spitting");
+      if (f.arm) parts.push("arm movements");
       if (f.environment) parts.push(cap(f.environment));
       if (f.durationSeconds != null) parts.push(fmtDuration(f.durationSeconds));
       if (f.triggers.length) parts.push("triggers: " + f.triggers.join(", "));
@@ -672,12 +683,12 @@
     return out;
   }
   function buildCSV() {
-    const head = ["timestamp", "date", "time", "speech", "spitting", "environment", "duration_seconds", "triggers", "logged_by", "lat", "lng", "accuracy_m", "notes"];
+    const head = ["timestamp", "date", "time", "speech", "spitting", "arm_movements", "environment", "duration_seconds", "triggers", "logged_by", "lat", "lng", "accuracy_m", "notes"];
     const rows = active().slice().sort(function (a, b) { return a.ts - b.ts; }).map(function (f) {
       const d = new Date(f.ts);
       return [
         new Date(f.ts).toISOString(), d.toLocaleDateString(), d.toLocaleTimeString(),
-        f.speech, f.spitting ? "yes" : "no", f.environment || "",
+        f.speech, f.spitting ? "yes" : "no", f.arm ? "yes" : "no", f.environment || "",
         f.durationSeconds == null ? "" : f.durationSeconds,
         f.triggers.join("; "), f.by || "", f.lat == null ? "" : f.lat, f.lng == null ? "" : f.lng,
         f.acc == null ? "" : f.acc, f.notes || ""
