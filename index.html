@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0f1320" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Fitful" />
+<title>Fitful</title>
+<style>
+  :root {
+    --bg: #0f1320;
+    --bg2: #171c2e;
+    --card: #1d2336;
+    --line: #2a3149;
+    --text: #eef1f8;
+    --muted: #9aa3bd;
+    --accent: #5b8cff;
+    --accent2: #34d399;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --speech: #5b8cff;
+    --spit: #fbbf24;
+    --env: #34d399;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overscroll-behavior: none;
+    -webkit-user-select: none; user-select: none;
+  }
+  #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+  .view { flex: 1; overflow-y: auto; padding: calc(var(--safe-top) + 14px) 16px 16px; display: none; }
+  .view.active { display: block; }
+  h1 { font-size: 20px; margin: 4px 0 16px; font-weight: 700; letter-spacing: .2px; }
+  h2 { font-size: 15px; margin: 22px 0 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .6px; }
+
+  /* ---------- Tab bar ---------- */
+  nav {
+    display: flex; border-top: 1px solid var(--line);
+    background: var(--bg2);
+    padding-bottom: var(--safe-bottom);
+  }
+  nav button {
+    flex: 1; background: none; border: none; color: var(--muted);
+    padding: 12px 0 10px; font-size: 12px; font-weight: 600;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer;
+  }
+  nav button .dot { width: 22px; height: 22px; border-radius: 7px; background: var(--line); transition: background .15s; }
+  nav button.active { color: var(--text); }
+  nav button.active .dot { background: var(--accent); }
+
+  /* ---------- Log screen ---------- */
+  #log-view { display: none; position: relative; }
+  #log-view.active { display: flex; flex-direction: column; }
+  .log-stage {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; min-height: 60vh;
+  }
+  .ring-wrap { position: relative; width: 300px; height: 300px; display: flex; align-items: center; justify-content: center; }
+  #logBtn {
+    width: 150px; height: 150px; border-radius: 50%; border: none; cursor: pointer;
+    background: radial-gradient(circle at 35% 30%, #6f9bff, #3b6fe0);
+    color: #fff; font-size: 22px; font-weight: 800; letter-spacing: .5px;
+    box-shadow: 0 12px 36px rgba(59,111,224,.45), inset 0 -6px 14px rgba(0,0,0,.18);
+    z-index: 5; transition: transform .12s ease, background .2s;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+  }
+  #logBtn:active { transform: scale(.94); }
+  #logBtn.open { background: radial-gradient(circle at 35% 30%, #4be0a0, #1fae78); box-shadow: 0 12px 36px rgba(31,174,120,.4); }
+  #logBtn small { display:block; font-size: 11px; font-weight:600; opacity:.85; margin-top:3px; }
+
+  .satellite {
+    position: absolute; top: 50%; left: 50%;
+    width: 74px; height: 74px; margin: -37px 0 0 -37px;
+    border-radius: 50%; border: 2px solid var(--line);
+    background: var(--card); color: var(--text);
+    font-size: 11px; font-weight: 700; line-height: 1.15; text-align: center;
+    display: flex; align-items: center; justify-content: center; padding: 4px;
+    opacity: 0; transform: translate(0,0) scale(.4); pointer-events: none;
+    transition: transform .28s cubic-bezier(.2,.9,.3,1.2), opacity .2s; cursor: pointer; z-index: 4;
+  }
+  .ring-wrap.open .satellite { opacity: 1; pointer-events: auto; }
+  .satellite .grp { display:block; font-size: 8px; color: var(--muted); font-weight:700; letter-spacing:.4px; }
+  .satellite.sel { border-color: currentColor; }
+  .satellite[data-group="speech"].sel { color: var(--speech); box-shadow: 0 0 0 3px rgba(91,140,255,.25); }
+  .satellite[data-group="spitting"].sel { color: var(--spit); box-shadow: 0 0 0 3px rgba(251,191,36,.25); }
+  .satellite[data-group="environment"].sel { color: var(--env); box-shadow: 0 0 0 3px rgba(52,211,153,.25); }
+
+  .today-count { margin-top: 18px; color: var(--muted); font-size: 14px; text-align: center; }
+  .today-count b { color: var(--text); font-size: 30px; display:block; font-weight: 800; }
+  #toast {
+    position: fixed; left: 50%; bottom: calc(90px + var(--safe-bottom)); transform: translateX(-50%) translateY(20px);
+    background: var(--accent2); color: #04240f; padding: 10px 18px; border-radius: 999px;
+    font-weight: 700; font-size: 14px; opacity: 0; pointer-events: none; transition: all .25s; z-index: 50;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ---------- Cards / list ---------- */
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+  .fit-row { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .fit-row .time { font-size: 17px; font-weight: 700; }
+  .fit-row .meta { color: var(--muted); font-size: 12.5px; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { background: var(--bg2); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 600; }
+  .pill.speech { color: var(--speech); } .pill.spit { color: var(--spit); } .pill.env { color: var(--env); }
+  .pill.dur { color: var(--text); } .pill.trig { color: var(--warn); }
+  .fit-row .chev { margin-left: auto; color: var(--muted); font-size: 20px; }
+  .day-head { color: var(--muted); font-size: 13px; font-weight: 700; margin: 18px 0 8px; }
+  .empty { color: var(--muted); text-align: center; margin-top: 40px; font-size: 15px; line-height: 1.5; }
+
+  /* ---------- Editor (modal sheet) ---------- */
+  #sheet-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 60; }
+  #sheet-backdrop.show { opacity: 1; pointer-events: auto; }
+  #sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 61;
+    background: var(--bg2); border-radius: 18px 18px 0 0; border-top: 1px solid var(--line);
+    padding: 16px 16px calc(20px + var(--safe-bottom)); transform: translateY(100%); transition: transform .25s ease;
+    max-height: 90vh; overflow-y: auto;
+  }
+  #sheet.show { transform: translateY(0); }
+  .sheet-grab { width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 0 auto 12px; }
+  .field { margin-bottom: 16px; }
+  .field > label { display: block; font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    border: 1.5px solid var(--line); background: var(--card); color: var(--text);
+    border-radius: 999px; padding: 9px 14px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .chip.on { border-color: var(--accent); background: rgba(91,140,255,.15); color: #cfe0ff; }
+  .chip.add { border-style: dashed; color: var(--muted); }
+  textarea {
+    width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px;
+    color: var(--text); padding: 12px; font: inherit; resize: vertical; min-height: 64px;
+  }
+  .btn {
+    width: 100%; border: none; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 700; cursor: pointer;
+    background: var(--accent); color: #fff; margin-top: 6px;
+  }
+  .btn.ghost { background: var(--card); color: var(--text); border: 1px solid var(--line); }
+  .btn.danger { background: transparent; color: var(--danger); }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { margin-top: 0; }
+
+  /* ---------- Insights ---------- */
+  .chart-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .chart-card .title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .chart-card .sub { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .stat-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .stat { flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; text-align: center; }
+  .stat b { display: block; font-size: 26px; font-weight: 800; }
+  .stat span { font-size: 11px; color: var(--muted); font-weight: 600; }
+  .hbar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+  .hbar-row .lbl { width: 96px; flex-shrink: 0; color: var(--muted); font-weight: 600; }
+  .hbar-track { flex: 1; background: var(--bg); border-radius: 6px; height: 18px; overflow: hidden; }
+  .hbar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 6px; }
+  .hbar-row .val { width: 26px; text-align: right; font-weight: 700; }
+  svg { display: block; width: 100%; }
+  .axis { fill: var(--muted); font-size: 9px; }
+
+  /* ---------- Header row + sync ---------- */
+  .head-row { display: flex; align-items: center; justify-content: space-between; }
+  .head-row h1 { margin: 4px 0 16px; }
+  #settingsBtn { background: var(--card); border: 1px solid var(--line); color: var(--muted); width: 38px; height: 38px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+  .sync-status { margin-top: 12px; font-size: 12.5px; font-weight: 600; text-align: center; min-height: 16px; }
+  .sync-status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; background: var(--muted); }
+  .sync-status.ok { color: var(--accent2); } .sync-status.ok .dot { background: var(--accent2); }
+  .sync-status.syncing { color: var(--accent); } .sync-status.syncing .dot { background: var(--accent); }
+  .sync-status.offline { color: var(--warn); } .sync-status.offline .dot { background: var(--warn); }
+  .sync-status.local { color: var(--muted); }
+  .pill.by { color: var(--muted); }
+  .code-box { font-size: 26px; font-weight: 800; letter-spacing: 4px; text-align: center; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+  .field input { width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; color: var(--text); padding: 12px; font: inherit; }
+  .note { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- LOG -->
+  <section id="log-view" class="view active">
+    <div class="head-row"><h1>Fitful</h1><button id="settingsBtn" aria-label="Settings">⚙</button></div>
+    <div class="log-stage">
+      <div class="ring-wrap" id="ringWrap">
+        <button id="logBtn">LOG<small id="logHint"></small></button>
+      </div>
+      <div class="today-count"><b id="todayCount">0</b> logged today</div>
+      <div class="sync-status" id="syncStatus"></div>
+    </div>
+  </section>
+
+  <!-- REVIEW -->
+  <section id="review-view" class="view">
+    <h1>Review</h1>
+    <div id="reviewList"></div>
+  </section>
+
+  <!-- INSIGHTS -->
+  <section id="insights-view" class="view">
+    <h1>Insights</h1>
+    <div id="insightsBody"></div>
+  </section>
+
+  <nav>
+    <button data-tab="log" class="active"><span class="dot"></span>Log</button>
+    <button data-tab="review"><span class="dot"></span>Review</button>
+    <button data-tab="insights"><span class="dot"></span>Insights</button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+<div id="sheet-backdrop"></div>
+<div id="sheet"></div>
+
+<script>
+"use strict";
+(function () {
+  // ---------------- Storage ----------------
+  const FITS_KEY = "fitrack.fits.v1";
+  const TRIG_KEY = "fitrack.triggers.v1";
+  const SEED_TRIGGERS = ["Stress", "Tiredness", "Poor sleep", "Hunger", "Sensory overload", "Strong emotion", "Heat", "Exertion"];
+
+  function load(key, fallback) {
+    try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
+    catch (e) { return fallback; }
+  }
+  function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+  let fits = load(FITS_KEY, []);
+  let triggerVocab = load(TRIG_KEY, SEED_TRIGGERS.slice());
+  function persistFits() { save(FITS_KEY, fits); }
+  function persistTriggers() { save(TRIG_KEY, triggerVocab); }
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  // ---------------- Sync state ----------------
+  const SPACE_KEY = "fitful.space";    // shared space code
+  const DEVICE_KEY = "fitful.device";  // logger name
+  const DIRTY_KEY = "fitful.dirty";    // array of fit ids pending push
+  const LASTSYNC_KEY = "fitful.lastSync";
+  const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O/1/I/L
+  const CODE_LEN = 6;
+
+  let spaceCode = load(SPACE_KEY, "") || "";
+  let deviceName = load(DEVICE_KEY, "") || "";
+  let dirty = load(DIRTY_KEY, []);
+
+  function markDirty(id) {
+    if (dirty.indexOf(id) < 0) { dirty.push(id); save(DIRTY_KEY, dirty); }
+    scheduleSync();
+  }
+  function clearDirty(ids) {
+    dirty = dirty.filter(function (id) { return ids.indexOf(id) < 0; });
+    save(DIRTY_KEY, dirty);
+  }
+  // Active (non-deleted) fits — all display/export paths use this; raw `fits` keeps tombstones for sync.
+  function active() { return fits.filter(function (f) { return !f.deleted; }); }
+  function genCode() {
+    let s = "";
+    const buf = new Uint32Array(CODE_LEN);
+    (crypto && crypto.getRandomValues) ? crypto.getRandomValues(buf) : buf.forEach(function (_, i) { buf[i] = Math.floor(Math.random() * 1e9); });
+    for (let i = 0; i < CODE_LEN; i++) s += CODE_ALPHABET[buf[i] % CODE_ALPHABET.length];
+    return s;
+  }
+
+  // ---------------- Geolocation ----------------
+  function captureLocation(fit) {
+    if (!("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        fit.lat = +pos.coords.latitude.toFixed(6);
+        fit.lng = +pos.coords.longitude.toFixed(6);
+        fit.acc = Math.round(pos.coords.accuracy);
+        fit.updatedAt = Date.now();
+        persistFits();
+        markDirty(fit.id);
+      },
+      function () { /* denied or unavailable — fit still valid */ },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+    );
+  }
+
+  // ---------------- Log screen + radial menu ----------------
+  const SAT = [
+    { group: "speech",      value: "normal",  label: "Speech<span class='grp'>OK</span>" },
+    { group: "speech",      value: "slurred", label: "Slurred" },
+    { group: "speech",      value: "none",    label: "No<br>speech" },
+    { group: "spitting",    value: true,      label: "Spitting" },
+    { group: "environment", value: "home",    label: "Home" },
+    { group: "environment", value: "car",     label: "Car" },
+    { group: "environment", value: "walking", label: "Walking" },
+    { group: "environment", value: "other",   label: "Other" },
+  ];
+  const RADIUS = 115;
+
+  const ringWrap = document.getElementById("ringWrap");
+  const logBtn = document.getElementById("logBtn");
+  const logHint = document.getElementById("logHint");
+  const toastEl = document.getElementById("toast");
+
+  let currentFit = null;     // fit being tagged via radial menu
+  let dismissTimer = null;
+  const satEls = [];
+
+  // build satellites once
+  SAT.forEach(function (s, i) {
+    const angle = (-90 + i * (360 / SAT.length)) * Math.PI / 180;
+    const x = Math.cos(angle) * RADIUS;
+    const y = Math.sin(angle) * RADIUS;
+    const el = document.createElement("button");
+    el.className = "satellite";
+    el.dataset.group = s.group;
+    el.dataset.idx = i;
+    el.innerHTML = s.label;
+    el.style.setProperty("--x", x + "px");
+    el.style.setProperty("--y", y + "px");
+    el.addEventListener("click", function (ev) { ev.stopPropagation(); onSatellite(s); });
+    ringWrap.appendChild(el);
+    satEls.push(el);
+  });
+
+  function openRing() {
+    ringWrap.classList.add("open");
+    logBtn.classList.add("open");
+    logBtn.firstChild.nodeValue = "Done";
+    logHint.innerHTML = "tap to finish";
+    satEls.forEach(function (el) {
+      el.style.transform = "translate(" + el.style.getPropertyValue("--x") + "," + el.style.getPropertyValue("--y") + ") scale(1)";
+    });
+  }
+  function closeRing() {
+    ringWrap.classList.remove("open");
+    logBtn.classList.remove("open");
+    logBtn.firstChild.nodeValue = "LOG";
+    logHint.innerHTML = "";
+    satEls.forEach(function (el) { el.style.transform = "translate(0,0) scale(.4)"; });
+    currentFit = null;
+    clearTimeout(dismissTimer);
+  }
+  function armDismiss() {
+    clearTimeout(dismissTimer);
+    dismissTimer = setTimeout(closeRing, 7000);
+  }
+  function refreshSatSelection() {
+    if (!currentFit) return;
+    satEls.forEach(function (el, i) {
+      const s = SAT[i];
+      let on = false;
+      if (s.group === "speech") on = currentFit.speech === s.value;
+      else if (s.group === "spitting") on = currentFit.spitting === true;
+      else if (s.group === "environment") on = currentFit.environment === s.value;
+      el.classList.toggle("sel", on);
+    });
+  }
+  function onSatellite(s) {
+    if (!currentFit) return;
+    if (s.group === "speech") currentFit.speech = s.value;
+    else if (s.group === "spitting") currentFit.spitting = !currentFit.spitting;
+    else if (s.group === "environment") currentFit.environment = (currentFit.environment === s.value ? null : s.value);
+    currentFit.updatedAt = Date.now();
+    persistFits();
+    markDirty(currentFit.id);
+    refreshSatSelection();
+    armDismiss();
+  }
+
+  function logNewFit() {
+    const fit = {
+      id: uid(), ts: Date.now(),
+      lat: null, lng: null, acc: null,
+      speech: "normal", spitting: false, environment: null,
+      durationSeconds: null, triggers: [], notes: "",
+      by: deviceName || null,
+      updatedAt: Date.now(),
+    };
+    fits.push(fit);
+    persistFits();
+    markDirty(fit.id);
+    captureLocation(fit);
+    currentFit = fit;
+    openRing();
+    refreshSatSelection();
+    armDismiss();
+    showToast("Logged " + fmtTime(fit.ts));
+    updateTodayCount();
+    if (navigator.vibrate) navigator.vibrate(30);
+  }
+
+  logBtn.addEventListener("click", function () {
+    if (ringWrap.classList.contains("open")) { closeRing(); }
+    else { logNewFit(); }
+  });
+
+  let toastTimer = null;
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 1600);
+  }
+
+  function startOfDay(ts) { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function updateTodayCount() {
+    const today = startOfDay(Date.now());
+    const n = active().filter(function (f) { return startOfDay(f.ts) === today; }).length;
+    document.getElementById("todayCount").textContent = n;
+  }
+
+  // ---------------- Formatting ----------------
+  function fmtTime(ts) {
+    return new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  function fmtDayHead(ts) {
+    const d = new Date(ts), today = startOfDay(Date.now()), yday = today - 86400000;
+    const s = startOfDay(ts);
+    if (s === today) return "Today";
+    if (s === yday) return "Yesterday";
+    return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+  }
+  const SPEECH_LBL = { normal: "Speech OK", slurred: "Slurred", none: "No speech" };
+  function fmtDuration(sec) {
+    if (sec == null) return null;
+    if (sec < 60) return sec + "s";
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return s ? m + "m " + s + "s" : m + "m";
+  }
+
+  // ---------------- Review screen ----------------
+  const reviewList = document.getElementById("reviewList");
+  function renderReview() {
+    const list = active();
+    if (!list.length) {
+      reviewList.innerHTML = '<div class="empty">No fits logged yet.<br>Tap the big <b>LOG</b> button to start.</div>';
+      return;
+    }
+    const sorted = list.slice().sort(function (a, b) { return b.ts - a.ts; });
+    let html = "", lastDay = null;
+    sorted.forEach(function (f) {
+      const dayKey = startOfDay(f.ts);
+      if (dayKey !== lastDay) {
+        const count = sorted.filter(function (x) { return startOfDay(x.ts) === dayKey; }).length;
+        html += '<div class="day-head">' + fmtDayHead(f.ts) + ' &middot; ' + count + ' fit' + (count > 1 ? "s" : "") + '</div>';
+        lastDay = dayKey;
+      }
+      html += fitRowHtml(f);
+    });
+    reviewList.innerHTML = html;
+    reviewList.querySelectorAll("[data-fit]").forEach(function (el) {
+      el.addEventListener("click", function () { openEditor(el.dataset.fit); });
+    });
+  }
+  function fitRowHtml(f) {
+    const pills = [];
+    pills.push('<span class="pill speech">' + SPEECH_LBL[f.speech] + '</span>');
+    if (f.spitting) pills.push('<span class="pill spit">Spitting</span>');
+    if (f.environment) pills.push('<span class="pill env">' + cap(f.environment) + '</span>');
+    if (f.durationSeconds != null) pills.push('<span class="pill dur">' + fmtDuration(f.durationSeconds) + '</span>');
+    if (f.triggers && f.triggers.length) pills.push('<span class="pill trig">' + f.triggers.length + ' trigger' + (f.triggers.length > 1 ? "s" : "") + '</span>');
+    if (f.lat != null) pills.push('<span class="pill">GPS</span>');
+    if (f.by) pills.push('<span class="pill by">by ' + esc(f.by) + '</span>');
+    return '<div class="card"><div class="fit-row" data-fit="' + f.id + '">' +
+      '<div><div class="time">' + fmtTime(f.ts) + '</div><div class="meta">' + pills.join("") + '</div></div>' +
+      '<div class="chev">&rsaquo;</div></div></div>';
+  }
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+  // ---------------- Editor sheet ----------------
+  const backdrop = document.getElementById("sheet-backdrop");
+  const sheet = document.getElementById("sheet");
+  const DUR_PRESETS = [10, 30, 60, 120, 300, 600];
+  let editingId = null;
+
+  function openEditor(id) {
+    const f = fits.find(function (x) { return x.id === id; });
+    if (!f) return;
+    editingId = id;
+    sheet.innerHTML = editorHtml(f);
+    wireEditor(f);
+    backdrop.classList.add("show");
+    sheet.classList.add("show");
+  }
+  function closeEditor() {
+    backdrop.classList.remove("show");
+    sheet.classList.remove("show");
+    editingId = null;
+  }
+  backdrop.addEventListener("click", closeEditor);
+
+  function editorHtml(f) {
+    const durChips = DUR_PRESETS.map(function (s) {
+      return '<button class="chip dur-chip ' + (f.durationSeconds === s ? "on" : "") + '" data-dur="' + s + '">' + fmtDuration(s) + '</button>';
+    }).join("");
+    const trigChips = triggerVocab.map(function (t) {
+      return '<button class="chip trig-chip ' + (f.triggers.indexOf(t) >= 0 ? "on" : "") + '" data-trig="' + esc(t) + '">' + esc(t) + '</button>';
+    }).join("");
+    const speechChips = ["normal", "slurred", "none"].map(function (v) {
+      return '<button class="chip sp-chip ' + (f.speech === v ? "on" : "") + '" data-speech="' + v + '">' + SPEECH_LBL[v] + '</button>';
+    }).join("");
+    const envChips = ["home", "car", "walking", "other"].map(function (v) {
+      return '<button class="chip env-chip ' + (f.environment === v ? "on" : "") + '" data-env="' + v + '">' + cap(v) + '</button>';
+    }).join("");
+    return '<div class="sheet-grab"></div>' +
+      '<h2 style="margin-top:0">' + fmtDayHead(f.ts) + ' &middot; ' + fmtTime(f.ts) + '</h2>' +
+      '<div class="field"><label>Speech</label><div class="chips">' + speechChips + '</div></div>' +
+      '<div class="field"><label>Spitting</label><div class="chips">' +
+        '<button class="chip spit-chip ' + (f.spitting ? "on" : "") + '" data-spit="1">' + (f.spitting ? "Yes" : "No") + '</button></div></div>' +
+      '<div class="field"><label>Environment</label><div class="chips">' + envChips + '</div></div>' +
+      '<div class="field"><label>Duration</label><div class="chips">' + durChips +
+        '<button class="chip add" id="durCustom">Custom…</button></div></div>' +
+      '<div class="field"><label>Triggers</label><div class="chips">' + trigChips +
+        '<button class="chip add" id="trigAdd">+ Add</button></div></div>' +
+      '<div class="field"><label>Notes</label><textarea id="notesBox" placeholder="Anything else worth remembering…">' + esc(f.notes || "") + '</textarea></div>' +
+      '<div class="btn-row"><button class="btn ghost" id="doneBtn">Done</button>' +
+      '<button class="btn danger" id="delBtn" style="flex:0 0 auto">Delete</button></div>';
+  }
+
+  function wireEditor(f) {
+    sheet.querySelectorAll(".sp-chip").forEach(function (b) {
+      b.addEventListener("click", function () { f.speech = b.dataset.speech; touch(f); reopen(f); });
+    });
+    sheet.querySelectorAll(".env-chip").forEach(function (b) {
+      b.addEventListener("click", function () { f.environment = (f.environment === b.dataset.env ? null : b.dataset.env); touch(f); reopen(f); });
+    });
+    const spit = sheet.querySelector(".spit-chip");
+    if (spit) spit.addEventListener("click", function () { f.spitting = !f.spitting; touch(f); reopen(f); });
+    sheet.querySelectorAll(".dur-chip").forEach(function (b) {
+      b.addEventListener("click", function () { const s = +b.dataset.dur; f.durationSeconds = (f.durationSeconds === s ? null : s); touch(f); reopen(f); });
+    });
+    sheet.querySelector("#durCustom").addEventListener("click", function () {
+      const v = prompt("Duration in seconds:", f.durationSeconds || "");
+      if (v !== null && v !== "" && !isNaN(+v)) { f.durationSeconds = Math.max(0, Math.round(+v)); touch(f); reopen(f); }
+    });
+    sheet.querySelectorAll(".trig-chip").forEach(function (b) {
+      b.addEventListener("click", function () {
+        const t = b.dataset.trig, i = f.triggers.indexOf(t);
+        if (i >= 0) f.triggers.splice(i, 1); else f.triggers.push(t);
+        touch(f); reopen(f);
+      });
+    });
+    sheet.querySelector("#trigAdd").addEventListener("click", function () {
+      const t = (prompt("New trigger:") || "").trim();
+      if (t) {
+        if (triggerVocab.indexOf(t) < 0) { triggerVocab.push(t); persistTriggers(); }
+        if (f.triggers.indexOf(t) < 0) f.triggers.push(t);
+        touch(f); reopen(f);
+      }
+    });
+    sheet.querySelector("#notesBox").addEventListener("input", function (e) { f.notes = e.target.value; f.updatedAt = Date.now(); persistFits(); markDirty(f.id); });
+    sheet.querySelector("#doneBtn").addEventListener("click", closeEditor);
+    sheet.querySelector("#delBtn").addEventListener("click", function () {
+      if (confirm("Delete this fit?")) {
+        f.deleted = true; f.updatedAt = Date.now();
+        persistFits(); markDirty(f.id); closeEditor(); renderReview(); updateTodayCount();
+      }
+    });
+  }
+  function touch(f) { f.updatedAt = Date.now(); persistFits(); markDirty(f.id); renderReview(); updateTodayCount(); }
+  function reopen(f) { sheet.innerHTML = editorHtml(f); wireEditor(f); }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
+
+  // ---------------- Insights ----------------
+  function renderInsights() {
+    const body = document.getElementById("insightsBody");
+    const list = active();
+    if (!list.length) {
+      body.innerHTML = '<div class="empty">No data yet.<br>Your patterns will appear here once you log a few fits.</div>';
+      return;
+    }
+    const total = list.length;
+    const days = new Set(list.map(function (f) { return startOfDay(f.ts); })).size;
+    const perDay = (total / Math.max(1, days)).toFixed(1);
+    const withDur = list.filter(function (f) { return f.durationSeconds != null; });
+    const avgDur = withDur.length ? Math.round(withDur.reduce(function (a, f) { return a + f.durationSeconds; }, 0) / withDur.length) : null;
+
+    let html = '<div class="stat-row">' +
+      '<div class="stat"><b>' + total + '</b><span>TOTAL FITS</span></div>' +
+      '<div class="stat"><b>' + perDay + '</b><span>PER DAY</span></div>' +
+      '<div class="stat"><b>' + (avgDur != null ? fmtDuration(avgDur) : "–") + '</b><span>AVG LENGTH</span></div>' +
+      '</div>';
+
+    html += '<div class="chart-card"><div class="title">Frequency</div><div class="sub">Fits per day, last 14 days</div>' + barChartDays() + '</div>';
+    html += '<div class="chart-card"><div class="title">Time of day</div><div class="sub">When fits tend to happen</div>' + barChartHours() + '</div>';
+    html += '<div class="chart-card"><div class="title">Triggers</div><div class="sub">Fits tagged with each trigger</div>' + hbars(countBy(function (f) { return f.triggers; }), "No triggers tagged yet — add them in Review.") + '</div>';
+    html += '<div class="chart-card"><div class="title">Environment</div><div class="sub">Where fits happen</div>' + hbars(countBy(function (f) { return f.environment ? [cap(f.environment)] : []; }), "No environment tagged yet.") + '</div>';
+
+    html += '<h2>Export &amp; backup</h2><div class="card">' +
+      '<div class="btn-row" style="margin-bottom:10px"><button class="btn" id="shareBtn">Share</button>' +
+      '<button class="btn ghost" id="copyBtn">Copy text</button></div>' +
+      '<div class="btn-row"><button class="btn ghost" id="csvBtn">CSV</button>' +
+      '<button class="btn ghost" id="jsonBtn">JSON</button></div></div>';
+
+    body.innerHTML = html;
+    document.getElementById("shareBtn").addEventListener("click", doShare);
+    document.getElementById("copyBtn").addEventListener("click", doCopy);
+    document.getElementById("csvBtn").addEventListener("click", function () { downloadFile(buildCSV(), "fitful.csv", "text/csv"); });
+    document.getElementById("jsonBtn").addEventListener("click", function () { downloadFile(JSON.stringify(active(), null, 2), "fitful.json", "application/json"); });
+  }
+
+  function countBy(extractFn) {
+    const m = {};
+    active().forEach(function (f) { (extractFn(f) || []).forEach(function (k) { m[k] = (m[k] || 0) + 1; }); });
+    return Object.keys(m).map(function (k) { return { label: k, value: m[k] }; }).sort(function (a, b) { return b.value - a.value; });
+  }
+  function hbars(rows, emptyMsg) {
+    if (!rows.length) return '<div style="color:var(--muted);font-size:13px">' + emptyMsg + '</div>';
+    const max = rows[0].value;
+    return rows.map(function (r) {
+      const pct = Math.round((r.value / max) * 100);
+      return '<div class="hbar-row"><span class="lbl">' + esc(r.label) + '</span>' +
+        '<span class="hbar-track"><span class="hbar-fill" style="width:' + pct + '%"></span></span>' +
+        '<span class="val">' + r.value + '</span></div>';
+    }).join("");
+  }
+  function barChartDays() {
+    const today = startOfDay(Date.now());
+    const list = active();
+    const labels = [], vals = [];
+    for (let i = 13; i >= 0; i--) {
+      const day = today - i * 86400000;
+      labels.push(new Date(day).toLocaleDateString([], { day: "numeric" }));
+      vals.push(list.filter(function (f) { return startOfDay(f.ts) === day; }).length);
+    }
+    return svgBars(labels, vals, function (i) { return i % 2 === 0; });
+  }
+  function barChartHours() {
+    const vals = new Array(24).fill(0);
+    active().forEach(function (f) { vals[new Date(f.ts).getHours()]++; });
+    const labels = vals.map(function (_, h) { return h; });
+    return svgBars(labels, vals, function (i) { return i % 6 === 0; }, function (h) { return h + "h"; });
+  }
+  function svgBars(labels, vals, showLabelFn, labelFmt) {
+    const W = 320, H = 130, padB = 18, padT = 16, n = vals.length;
+    const max = Math.max(1, Math.max.apply(null, vals));
+    const gap = 3, bw = (W - gap * (n - 1)) / n;
+    let bars = "";
+    vals.forEach(function (v, i) {
+      const h = v === 0 ? 0 : Math.max(2, ((v / max) * (H - padB - padT)));
+      const x = i * (bw + gap), y = H - padB - h;
+      bars += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2" fill="' + (v ? "#5b8cff" : "#2a3149") + '"></rect>';
+      if (v) bars += '<text class="axis" x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 3).toFixed(1) + '" text-anchor="middle" fill="#9aa3bd">' + v + '</text>';
+      if (showLabelFn(i)) bars += '<text class="axis" x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle">' + (labelFmt ? labelFmt(labels[i]) : labels[i]) + '</text>';
+    });
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" height="130">' + bars + '</svg>';
+  }
+
+  // ---------------- Export ----------------
+  function buildSummaryText() {
+    const list = active();
+    const sorted = list.slice().sort(function (a, b) { return a.ts - b.ts; });
+    const days = new Set(list.map(function (f) { return startOfDay(f.ts); })).size;
+    let out = "Fitful seizure log\n";
+    out += "Total fits: " + list.length + " over " + days + " day(s)\n";
+    out += "Exported: " + new Date().toLocaleString() + "\n\n";
+    let lastDay = null;
+    sorted.forEach(function (f) {
+      const dk = startOfDay(f.ts);
+      if (dk !== lastDay) { out += "— " + new Date(f.ts).toLocaleDateString() + " —\n"; lastDay = dk; }
+      const parts = [fmtTime(f.ts), SPEECH_LBL[f.speech]];
+      if (f.spitting) parts.push("spitting");
+      if (f.environment) parts.push(cap(f.environment));
+      if (f.durationSeconds != null) parts.push(fmtDuration(f.durationSeconds));
+      if (f.triggers.length) parts.push("triggers: " + f.triggers.join(", "));
+      if (f.by) parts.push("by " + f.by);
+      if (f.notes) parts.push('"' + f.notes + '"');
+      out += "  " + parts.join(" | ") + "\n";
+    });
+    return out;
+  }
+  function buildCSV() {
+    const head = ["timestamp", "date", "time", "speech", "spitting", "environment", "duration_seconds", "triggers", "logged_by", "lat", "lng", "accuracy_m", "notes"];
+    const rows = active().slice().sort(function (a, b) { return a.ts - b.ts; }).map(function (f) {
+      const d = new Date(f.ts);
+      return [
+        new Date(f.ts).toISOString(), d.toLocaleDateString(), d.toLocaleTimeString(),
+        f.speech, f.spitting ? "yes" : "no", f.environment || "",
+        f.durationSeconds == null ? "" : f.durationSeconds,
+        f.triggers.join("; "), f.by || "", f.lat == null ? "" : f.lat, f.lng == null ? "" : f.lng,
+        f.acc == null ? "" : f.acc, f.notes || ""
+      ].map(csvCell).join(",");
+    });
+    return head.join(",") + "\n" + rows.join("\n");
+  }
+  function csvCell(v) { v = String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+
+  function downloadFile(content, name, type) {
+    const blob = new Blob([content], { type: type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+  }
+  function doShare() {
+    const text = buildSummaryText();
+    if (navigator.share) {
+      navigator.share({ title: "Fitful seizure log", text: text }).catch(function () {});
+    } else { doCopy(); }
+  }
+  function doCopy() {
+    const text = buildSummaryText();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { showTabToast("Copied to clipboard"); }, function () { fallbackCopy(text); });
+    } else { fallbackCopy(text); }
+  }
+  function fallbackCopy(text) {
+    const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); showTabToast("Copied to clipboard"); } catch (e) { alert("Copy failed — select and copy manually."); }
+    document.body.removeChild(ta);
+  }
+  function showTabToast(msg) { showToast(msg); }
+
+  // ---------------- Sync engine ----------------
+  const syncStatusEl = document.getElementById("syncStatus");
+  let syncTimer = null, syncing = false;
+
+  function fmtAgo(ts) {
+    if (!ts) return "";
+    const s = Math.round((Date.now() - ts) / 1000);
+    if (s < 10) return "just now";
+    if (s < 60) return s + "s ago";
+    const m = Math.round(s / 60);
+    if (m < 60) return m + "m ago";
+    const h = Math.round(m / 60);
+    return h + "h ago";
+  }
+  function setSyncStatus(state, text) {
+    if (!syncStatusEl) return;
+    syncStatusEl.className = "sync-status " + state;
+    syncStatusEl.innerHTML = state === "local" ? text : '<span class="dot"></span>' + text;
+  }
+  function refreshSyncStatus() {
+    if (!spaceCode) { setSyncStatus("local", "Local only — open settings to share"); return; }
+    if (syncing) { setSyncStatus("syncing", "Syncing…"); return; }
+    if (!navigator.onLine) { setSyncStatus("offline", "Offline — will sync when online"); return; }
+    const last = load(LASTSYNC_KEY, 0);
+    setSyncStatus("ok", "Synced " + (last ? fmtAgo(last) : "just now"));
+  }
+
+  function scheduleSync() {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(syncNow, 1500);
+  }
+
+  function mergeRemote(remote) {
+    const byId = {};
+    fits.forEach(function (f) { byId[f.id] = f; });
+    let changed = false;
+    remote.forEach(function (r) {
+      if (!r || typeof r.id !== "string") return;
+      const cur = byId[r.id];
+      if (!cur || (r.updatedAt || 0) > (cur.updatedAt || 0)) {
+        byId[r.id] = r; changed = true;
+      }
+    });
+    if (changed) {
+      fits = Object.keys(byId).map(function (k) { return byId[k]; });
+      persistFits();
+    }
+    return changed;
+  }
+
+  async function syncNow() {
+    if (!spaceCode || syncing) return;
+    syncing = true; refreshSyncStatus();
+    try {
+      // Push dirty fits
+      if (dirty.length) {
+        const pushing = dirty.slice();
+        const payload = fits.filter(function (f) { return pushing.indexOf(f.id) >= 0; });
+        const res = await fetch("/api/fits", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ code: spaceCode, fits: payload }),
+        });
+        if (!res.ok) throw new Error("push failed");
+        clearDirty(pushing);
+      }
+      // Pull all + merge
+      const res = await fetch("/api/fits?code=" + encodeURIComponent(spaceCode), { cache: "no-store" });
+      if (!res.ok) throw new Error("pull failed");
+      const data = await res.json();
+      const changed = mergeRemote(data.fits || []);
+      save(LASTSYNC_KEY, Date.now());
+      syncing = false;
+      refreshSyncStatus();
+      if (changed) {
+        updateTodayCount();
+        if (views.review.classList.contains("active")) renderReview();
+        if (views.insights.classList.contains("active")) renderInsights();
+      }
+    } catch (e) {
+      // Leave dirty intact for retry; reflect offline/error state.
+      syncing = false;
+      refreshSyncStatus();
+    }
+  }
+
+  // ---------------- Settings sheet ----------------
+  function openSettings() {
+    sheet.innerHTML = settingsHtml();
+    wireSettings();
+    backdrop.classList.add("show");
+    sheet.classList.add("show");
+  }
+  function settingsHtml() {
+    const code = spaceCode || "";
+    return '<div class="sheet-grab"></div>' +
+      '<h2 style="margin-top:0">Shared space</h2>' +
+      '<div class="field"><label>Space code</label>' +
+      '<div class="code-box" id="codeBox">' + (code ? esc(code) : "— none —") + '</div>' +
+      '<div class="btn-row"><button class="btn ghost" id="genBtn">' + (code ? "New code" : "Generate") + '</button>' +
+      '<button class="btn ghost" id="copyCodeBtn">Copy</button>' +
+      '<button class="btn ghost" id="shareLinkBtn">Share link</button></div>' +
+      '<div class="note">Anyone with this code can read and add fits. Send the share link to the other carer so you both log to one place. Keep it private.</div></div>' +
+      '<div class="field"><label>Join an existing space</label>' +
+      '<input id="joinInput" placeholder="Enter a code" autocapitalize="characters" autocomplete="off" value="" />' +
+      '<div class="note">Paste a code to join a space someone else created.</div></div>' +
+      '<div class="field"><label>Your name (shown on each fit)</label>' +
+      '<input id="nameInput" placeholder="e.g. Mum" value="' + esc(deviceName || "") + '" /></div>' +
+      '<div class="btn-row"><button class="btn" id="syncBtn">Sync now</button>' +
+      '<button class="btn ghost" id="settingsDone">Done</button></div>';
+  }
+  function wireSettings() {
+    const codeBox = sheet.querySelector("#codeBox");
+    sheet.querySelector("#genBtn").addEventListener("click", function () {
+      spaceCode = genCode(); save(SPACE_KEY, spaceCode);
+      codeBox.textContent = spaceCode;
+      // Everything local is now unsynced for this space — push it all.
+      dirty = active().map(function (f) { return f.id; }).concat(fits.filter(function (f) { return f.deleted; }).map(function (f) { return f.id; }));
+      save(DIRTY_KEY, dirty);
+      refreshSyncStatus(); scheduleSync();
+    });
+    sheet.querySelector("#copyCodeBtn").addEventListener("click", function () {
+      if (!spaceCode) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(spaceCode).then(function () { showToast("Code copied"); }, function () {});
+    });
+    sheet.querySelector("#shareLinkBtn").addEventListener("click", function () {
+      if (!spaceCode) { showToast("Generate a code first"); return; }
+      const link = location.origin + location.pathname + "#space=" + spaceCode;
+      if (navigator.share) navigator.share({ title: "Join our Fitful space", text: "Tap to log fits with me:", url: link }).catch(function () {});
+      else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(function () { showToast("Link copied"); }, function () {});
+    });
+    sheet.querySelector("#joinInput").addEventListener("change", function (e) {
+      const v = (e.target.value || "").trim().toUpperCase();
+      if (!v) return;
+      if (!/^[A-Za-z0-9]{4,16}$/.test(v)) { showToast("Invalid code"); return; }
+      joinSpace(v); openSettings();
+    });
+    sheet.querySelector("#nameInput").addEventListener("input", function (e) {
+      deviceName = e.target.value.trim();
+      save(DEVICE_KEY, deviceName);
+    });
+    sheet.querySelector("#syncBtn").addEventListener("click", function () {
+      if (!spaceCode) { showToast("Generate or join a space first"); return; }
+      syncNow();
+    });
+    sheet.querySelector("#settingsDone").addEventListener("click", closeEditor);
+  }
+  function joinSpace(code) {
+    spaceCode = code; save(SPACE_KEY, spaceCode);
+    // Push any local-only fits to the joined space, then pull.
+    dirty = fits.map(function (f) { return f.id; });
+    save(DIRTY_KEY, dirty);
+    refreshSyncStatus(); syncNow();
+  }
+  document.getElementById("settingsBtn").addEventListener("click", openSettings);
+
+  // ---------------- Tab navigation ----------------
+  const tabBtns = document.querySelectorAll("nav button");
+  const views = { log: document.getElementById("log-view"), review: document.getElementById("review-view"), insights: document.getElementById("insights-view") };
+  function switchTab(name) {
+    tabBtns.forEach(function (b) { b.classList.toggle("active", b.dataset.tab === name); });
+    Object.keys(views).forEach(function (k) { views[k].classList.toggle("active", k === name); });
+    if (name === "review") renderReview();
+    if (name === "insights") renderInsights();
+    if (name === "log") { closeRing(); updateTodayCount(); refreshSyncStatus(); }
+  }
+  tabBtns.forEach(function (b) { b.addEventListener("click", function () { switchTab(b.dataset.tab); }); });
+
+  // ---------------- Init ----------------
+  // Join via shared link: #space=CODE
+  (function parseHash() {
+    const m = /[#&]space=([A-Za-z0-9]{4,16})/.exec(location.hash || "");
+    if (m) {
+      const code = m[1].toUpperCase();
+      if (code !== spaceCode) joinSpace(code);
+      else spaceCode = code;
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+  })();
+
+  updateTodayCount();
+  refreshSyncStatus();
+
+  if (spaceCode) syncNow();
+  setInterval(function () { if (spaceCode && navigator.onLine) syncNow(); }, 45000);
+  window.addEventListener("online", function () { refreshSyncStatus(); if (spaceCode) syncNow(); });
+  window.addEventListener("offline", refreshSyncStatus);
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && spaceCode && navigator.onLine) syncNow();
+  });
+})();
+</script>
+</body>
+</html>
