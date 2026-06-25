@@ -823,7 +823,10 @@
       '<div class="field"><label>Your name (shown on each fit)</label>' +
       '<input id="nameInput" placeholder="e.g. Mum" value="' + esc(deviceName || "") + '" /></div>' +
       '<div class="btn-row"><button class="btn" id="syncBtn">Sync now</button>' +
-      '<button class="btn ghost" id="settingsDone">Done</button></div>';
+      '<button class="btn ghost" id="settingsDone">Done</button></div>' +
+      '<h2>Danger zone</h2>' +
+      '<div class="field"><button class="btn danger" id="resetBtn" style="border:1px solid var(--danger)">Reset all data</button>' +
+      '<div class="note">Erases every fit and setting on this device and leaves the shared space. Data already synced to the cloud is not deleted — the other carer keeps their copy, and rejoining the space would pull it back.</div></div>';
   }
   function wireSettings() {
     const codeBox = sheet.querySelector("#codeBox");
@@ -860,6 +863,11 @@
       syncNow();
     });
     sheet.querySelector("#settingsDone").addEventListener("click", closeEditor);
+    sheet.querySelector("#resetBtn").addEventListener("click", function () {
+      if (!confirm("Reset all data on this device?\n\nThis erases every fit and setting here and leaves the shared space. It cannot be undone. Cloud data is not deleted.")) return;
+      [FITS_KEY, TRIG_KEY, SPACE_KEY, DEVICE_KEY, DIRTY_KEY, LASTSYNC_KEY].forEach(function (k) { localStorage.removeItem(k); });
+      location.reload();
+    });
   }
   function joinSpace(code) {
     spaceCode = code; save(SPACE_KEY, spaceCode);
