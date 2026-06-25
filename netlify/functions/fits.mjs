@@ -10,7 +10,9 @@ function json(obj, status = 200) {
 }
 
 export default async (req) => {
-  const store = getStore("fitful");
+  // Strong consistency so freshly written fits show up in reads immediately;
+  // the default (eventual) lets store.list() lag up to ~60s, which looks like broken sync.
+  const store = getStore({ name: "fitful", consistency: "strong" });
 
   if (req.method === "GET") {
     const url = new URL(req.url);
