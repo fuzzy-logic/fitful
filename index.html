@@ -88,12 +88,18 @@
     transition: transform .28s cubic-bezier(.2,.9,.3,1.2), opacity .2s; cursor: pointer; z-index: 4;
   }
   .ring-wrap.open .satellite { opacity: 1; pointer-events: auto; }
-  .satellite .grp { display:block; font-size: 8px; color: var(--muted); font-weight:700; letter-spacing:.4px; }
+  .satellite .grp { display:block; font-size: 8px; color: inherit; opacity: .7; font-weight:700; letter-spacing:.4px; }
+  /* Resting state: each category gets its own colour family so groups read at a glance */
+  .satellite[data-group="speech"]      { border-color: rgba(91,140,255,.55);  background: rgba(91,140,255,.12);  color: #cfe0ff; }
+  .satellite[data-group="spitting"]    { border-color: rgba(251,191,36,.55);  background: rgba(251,191,36,.12);  color: #ffe7b3; }
+  .satellite[data-group="arm"]         { border-color: rgba(192,132,252,.55); background: rgba(192,132,252,.12); color: #e9d5ff; }
+  .satellite[data-group="environment"] { border-color: rgba(52,211,153,.55);  background: rgba(52,211,153,.12);  color: #b6f0d8; }
+  /* Selected state: stronger fill + glow ring in the category colour */
   .satellite.sel { border-color: currentColor; }
-  .satellite[data-group="speech"].sel { color: var(--speech); box-shadow: 0 0 0 3px rgba(91,140,255,.25); }
-  .satellite[data-group="spitting"].sel { color: var(--spit); box-shadow: 0 0 0 3px rgba(251,191,36,.25); }
-  .satellite[data-group="environment"].sel { color: var(--env); box-shadow: 0 0 0 3px rgba(52,211,153,.25); }
-  .satellite[data-group="arm"].sel { color: var(--arm); box-shadow: 0 0 0 3px rgba(192,132,252,.25); }
+  .satellite[data-group="speech"].sel      { color: var(--speech); background: rgba(91,140,255,.28);  box-shadow: 0 0 0 3px rgba(91,140,255,.3); }
+  .satellite[data-group="spitting"].sel    { color: var(--spit);   background: rgba(251,191,36,.28);  box-shadow: 0 0 0 3px rgba(251,191,36,.3); }
+  .satellite[data-group="environment"].sel { color: var(--env);    background: rgba(52,211,153,.28);  box-shadow: 0 0 0 3px rgba(52,211,153,.3); }
+  .satellite[data-group="arm"].sel         { color: var(--arm);    background: rgba(192,132,252,.28); box-shadow: 0 0 0 3px rgba(192,132,252,.3); }
 
   .today-count { margin-top: 18px; color: var(--muted); font-size: 14px; text-align: center; }
   .today-count b { color: var(--text); font-size: 30px; display:block; font-weight: 800; }
