@@ -185,6 +185,73 @@
   .code-box { font-size: 26px; font-weight: 800; letter-spacing: 4px; text-align: center; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
   .field input { width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; color: var(--text); padding: 12px; font: inherit; }
   .note { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
+
+  /* ---------- Editable fit clock (shown while logging) ---------- */
+  .fit-clock {
+    display: flex; align-items: center; gap: 12px; margin: 20px auto 0;
+    background: var(--card); border: 1.5px solid var(--accent); border-radius: 14px;
+    padding: 12px 18px; cursor: pointer; color: var(--text); text-align: left;
+    box-shadow: 0 4px 16px rgba(91,140,255,.18);
+  }
+  .fit-clock[hidden] { display: none; }
+  .fit-clock:active { transform: scale(.97); }
+  .fit-clock .fc-icon { font-size: 24px; }
+  .fit-clock .fc-text { display: flex; flex-direction: column; line-height: 1.15; }
+  .fit-clock .fc-text b { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .fit-clock .fc-text small { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .fit-clock .fc-edit {
+    margin-left: auto; display: flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 50%; background: rgba(91,140,255,.15);
+    color: var(--accent); font-size: 18px;
+  }
+
+  /* ---------- Time picker (drum/wheel) ---------- */
+  #tp-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 70; }
+  #tp-backdrop.show { opacity: 1; pointer-events: auto; }
+  #tp {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 71;
+    background: var(--bg2); border-radius: 18px 18px 0 0; border-top: 1px solid var(--line);
+    padding: 16px 16px calc(20px + var(--safe-bottom)); transform: translateY(100%); transition: transform .25s ease;
+  }
+  #tp.show { transform: translateY(0); }
+  .tp-label { text-align: center; font-size: 22px; font-weight: 800; margin: 4px 0 14px; }
+  .tp-wheels { display: flex; justify-content: center; align-items: center; gap: 4px; position: relative; height: 240px; }
+  .tp-wheels::before {
+    content: ""; position: absolute; left: 50%; transform: translateX(-50%); width: 188px;
+    top: 96px; height: 48px; border-top: 1.5px solid var(--accent); border-bottom: 1.5px solid var(--accent);
+    border-radius: 10px; pointer-events: none;
+  }
+  .tp-colon { font-size: 30px; font-weight: 800; color: var(--muted); }
+  .tp-wheel {
+    height: 240px; width: 84px; overflow-y: auto; scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent);
+  }
+  .tp-wheel::-webkit-scrollbar { display: none; }
+  .tp-opt { height: 48px; line-height: 48px; text-align: center; font-size: 28px; font-weight: 700; color: var(--muted); scroll-snap-align: center; }
+  .tp-opt.sel { color: var(--text); }
+  .tp-spacer { height: 96px; }
+  .tp-pills { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
+  .tp-pill {
+    flex: 1; border: 1.5px solid var(--line); background: var(--card); color: var(--text);
+    border-radius: 999px; padding: 11px 14px; font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+  .tp-pill.on { border-color: var(--accent); background: rgba(91,140,255,.15); color: #cfe0ff; }
+  .editor-time { background: var(--card); border: 1px solid var(--line); color: var(--text); border-radius: 12px; padding: 12px 14px; font-size: 18px; font-weight: 800; width: 100%; text-align: left; cursor: pointer; margin: 0 0 16px; }
+  .editor-time .edit-hint { float: right; color: var(--muted); font-weight: 600; font-size: 14px; }
+  .stepper { display: flex; align-items: center; gap: 18px; }
+  .step-btn {
+    width: 52px; height: 52px; border-radius: 50%; border: 1.5px solid var(--line);
+    background: var(--card); color: var(--text); font-size: 28px; font-weight: 700; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-btn:active { transform: scale(.92); }
+  .stepper b { font-size: 30px; font-weight: 800; min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; }
+  .count-badge { display: inline-block; margin-left: 8px; background: rgba(91,140,255,.18); color: #cfe0ff; border-radius: 999px; padding: 1px 9px; font-size: 14px; font-weight: 800; vertical-align: middle; }
+  .ring-count { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 14px auto 0; }
+  .ring-count[hidden] { display: none; }
+  .ring-count .rc-label { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
 </style>
 </head>
 <body>
@@ -198,6 +265,19 @@
       </div>
       <div class="today-count"><b id="todayCount">0</b> logged today</div>
       <div class="sync-status" id="syncStatus"></div>
+      <button id="fitClock" class="fit-clock" hidden aria-label="Edit time">
+        <span class="fc-icon">&#128339;</span>
+        <span class="fc-text"><b id="fcTime">--:--</b><small id="fcDay">Today</small></span>
+        <span class="fc-edit">&#9998;</span>
+      </button>
+      <div id="ringCount" class="ring-count" hidden>
+        <span class="rc-label">Number of fits</span>
+        <div class="stepper">
+          <button class="step-btn" id="ringCountMinus" aria-label="Fewer">&minus;</button>
+          <b id="ringCountVal">1</b>
+          <button class="step-btn" id="ringCountPlus" aria-label="More">+</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -223,6 +303,8 @@
 <div id="toast"></div>
 <div id="sheet-backdrop"></div>
 <div id="sheet"></div>
+<div id="tp-backdrop"></div>
+<div id="tp"></div>
 
 <script>
 "use strict";
@@ -310,6 +392,8 @@
   const logBtn = document.getElementById("logBtn");
   const logHint = document.getElementById("logHint");
   const toastEl = document.getElementById("toast");
+  const fitClock = document.getElementById("fitClock");
+  const ringCount = document.getElementById("ringCount");
 
   let currentFit = null;     // fit being tagged via radial menu
   let dismissTimer = null;
@@ -340,6 +424,9 @@
     satEls.forEach(function (el) {
       el.style.transform = "translate(" + el.style.getPropertyValue("--x") + "," + el.style.getPropertyValue("--y") + ") scale(1)";
     });
+    renderFitClock();
+    fitClock.hidden = false;
+    ringCount.hidden = false;
   }
   function closeRing() {
     ringWrap.classList.remove("open");
@@ -348,8 +435,40 @@
     logHint.innerHTML = "";
     satEls.forEach(function (el) { el.style.transform = "translate(0,0) scale(.4)"; });
     currentFit = null;
+    fitClock.hidden = true;
+    ringCount.hidden = true;
     clearTimeout(dismissTimer);
   }
+  function renderFitClock() {
+    if (!currentFit) return;
+    document.getElementById("fcTime").textContent = fmt24(currentFit.ts);
+    document.getElementById("fcDay").textContent = fmtDayHead(currentFit.ts);
+    document.getElementById("ringCountVal").textContent = fitCount(currentFit);
+  }
+  fitClock.addEventListener("click", function () {
+    if (!currentFit) return;
+    clearTimeout(dismissTimer);
+    const f = currentFit;
+    openTimePicker(f.ts, function (ts) {
+      f.ts = ts; f.updatedAt = Date.now();
+      persistFits(); markDirty(f.id); updateTodayCount();
+      renderFitClock();
+    });
+  });
+  function setRingCount(n) {
+    if (!currentFit) return;
+    currentFit.count = Math.max(1, n);
+    currentFit.updatedAt = Date.now();
+    persistFits(); markDirty(currentFit.id); updateTodayCount();
+    document.getElementById("ringCountVal").textContent = fitCount(currentFit);
+    armDismiss();
+  }
+  document.getElementById("ringCountMinus").addEventListener("click", function (ev) {
+    ev.stopPropagation(); setRingCount(fitCount(currentFit) - 1);
+  });
+  document.getElementById("ringCountPlus").addEventListener("click", function (ev) {
+    ev.stopPropagation(); setRingCount(fitCount(currentFit) + 1);
+  });
   function armDismiss() {
     clearTimeout(dismissTimer);
     dismissTimer = setTimeout(closeRing, 7000);
@@ -379,12 +498,12 @@
     armDismiss();
   }
 
-  function logNewFit() {
+  function createFit(ts) {
     const fit = {
-      id: uid(), ts: Date.now(),
+      id: uid(), ts: ts,
       lat: null, lng: null, acc: null,
       speech: "normal", spitting: false, arm: false, environment: null,
-      durationSeconds: null, triggers: [], notes: "",
+      durationSeconds: null, count: 1, triggers: [], notes: "",
       by: deviceName || null,
       updatedAt: Date.now(),
     };
@@ -393,12 +512,21 @@
     markDirty(fit.id);
     captureLocation(fit);
     currentFit = fit;
+    return fit;
+  }
+
+  function tagNewFit(fit, toastMsg) {
     openRing();
     refreshSatSelection();
     armDismiss();
-    showToast("Logged " + fmtTime(fit.ts));
+    showToast(toastMsg);
     updateTodayCount();
     if (navigator.vibrate) navigator.vibrate(30);
+  }
+
+  function logNewFit() {
+    const fit = createFit(Date.now());
+    tagNewFit(fit, "Logged " + fmt24(fit.ts));
   }
 
   logBtn.addEventListener("click", function () {
@@ -415,15 +543,21 @@
   }
 
   function startOfDay(ts) { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); }
+  function fitCount(f) { return Math.max(1, (f && f.count) || 1); }
+  function sumCount(list) { return list.reduce(function (a, f) { return a + fitCount(f); }, 0); }
   function updateTodayCount() {
     const today = startOfDay(Date.now());
-    const n = active().filter(function (f) { return startOfDay(f.ts) === today; }).length;
+    const n = sumCount(active().filter(function (f) { return startOfDay(f.ts) === today; }));
     document.getElementById("todayCount").textContent = n;
   }
 
   // ---------------- Formatting ----------------
   function fmtTime(ts) {
     return new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  function fmt24(ts) {
+    const d = new Date(ts), p = function (n) { return n < 10 ? "0" + n : "" + n; };
+    return p(d.getHours()) + ":" + p(d.getMinutes());
   }
   function fmtDayHead(ts) {
     const d = new Date(ts), today = startOfDay(Date.now()), yday = today - 86400000;
@@ -453,7 +587,7 @@
     sorted.forEach(function (f) {
       const dayKey = startOfDay(f.ts);
       if (dayKey !== lastDay) {
-        const count = sorted.filter(function (x) { return startOfDay(x.ts) === dayKey; }).length;
+        const count = sumCount(sorted.filter(function (x) { return startOfDay(x.ts) === dayKey; }));
         html += '<div class="day-head">' + fmtDayHead(f.ts) + ' &middot; ' + count + ' fit' + (count > 1 ? "s" : "") + '</div>';
         lastDay = dayKey;
       }
@@ -474,8 +608,9 @@
     if (f.triggers && f.triggers.length) pills.push('<span class="pill trig">' + f.triggers.length + ' trigger' + (f.triggers.length > 1 ? "s" : "") + '</span>');
     if (f.lat != null) pills.push('<span class="pill">GPS</span>');
     if (f.by) pills.push('<span class="pill by">by ' + esc(f.by) + '</span>');
+    const badge = fitCount(f) > 1 ? '<span class="count-badge">&times;' + fitCount(f) + '</span>' : '';
     return '<div class="card"><div class="fit-row" data-fit="' + f.id + '">' +
-      '<div><div class="time">' + fmtTime(f.ts) + '</div><div class="meta">' + pills.join("") + '</div></div>' +
+      '<div><div class="time">' + fmtTime(f.ts) + badge + '</div><div class="meta">' + pills.join("") + '</div></div>' +
       '<div class="chev">&rsaquo;</div></div></div>';
   }
   function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
@@ -516,7 +651,11 @@
       return '<button class="chip env-chip ' + (f.environment === v ? "on" : "") + '" data-env="' + v + '">' + cap(v) + '</button>';
     }).join("");
     return '<div class="sheet-grab"></div>' +
-      '<h2 style="margin-top:0">' + fmtDayHead(f.ts) + ' &middot; ' + fmtTime(f.ts) + '</h2>' +
+      '<button class="editor-time" id="editTime">' + fmtDayHead(f.ts) + ' &middot; ' + fmt24(f.ts) + '<span class="edit-hint">&#9998; edit</span></button>' +
+      '<div class="field"><label>Number of fits</label><div class="stepper">' +
+        '<button class="step-btn" id="countMinus" aria-label="Fewer">&minus;</button>' +
+        '<b id="countVal">' + fitCount(f) + '</b>' +
+        '<button class="step-btn" id="countPlus" aria-label="More">+</button></div></div>' +
       '<div class="field"><label>Speech</label><div class="chips">' + speechChips + '</div></div>' +
       '<div class="field"><label>Spitting</label><div class="chips">' +
         '<button class="chip spit-chip ' + (f.spitting ? "on" : "") + '" data-spit="1">' + (f.spitting ? "Yes" : "No") + '</button></div></div>' +
@@ -533,6 +672,12 @@
   }
 
   function wireEditor(f) {
+    sheet.querySelector("#editTime").addEventListener("click", function () {
+      openTimePicker(f.ts, function (ts) { f.ts = ts; touch(f); reopen(f); });
+    });
+    function setCount(n) { f.count = Math.max(1, n); touch(f); sheet.querySelector("#countVal").textContent = fitCount(f); }
+    sheet.querySelector("#countMinus").addEventListener("click", function () { setCount(fitCount(f) - 1); });
+    sheet.querySelector("#countPlus").addEventListener("click", function () { setCount(fitCount(f) + 1); });
     sheet.querySelectorAll(".sp-chip").forEach(function (b) {
       b.addEventListener("click", function () { f.speech = b.dataset.speech; touch(f); reopen(f); });
     });
@@ -579,6 +724,105 @@
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
 
+  // ---------------- Time picker (drum/wheel) ----------------
+  const tpBackdrop = document.getElementById("tp-backdrop");
+  const tpEl = document.getElementById("tp");
+  const TP_ROW_H = 48;
+  const TP_MIN_STEP = 5;
+  let tpConfirmCb = null;
+
+  function tpOptList(values) {
+    return '<div class="tp-spacer"></div>' +
+      values.map(function (v) { return '<div class="tp-opt">' + (v < 10 ? "0" + v : v) + '</div>'; }).join("") +
+      '<div class="tp-spacer"></div>';
+  }
+
+  function openTimePicker(initialTs, onConfirm) {
+    tpConfirmCb = onConfirm;
+    const d = new Date(initialTs);
+    const h24 = d.getHours();
+    let min = Math.round(d.getMinutes() / TP_MIN_STEP) * TP_MIN_STEP;
+    if (min >= 60) min = 60 - TP_MIN_STEP;
+    let dayOff = startOfDay(initialTs) <= startOfDay(Date.now()) - 86400000 ? 1 : 0; // 1 = yesterday
+
+    const hours = []; for (let i = 0; i <= 23; i++) hours.push(i);
+    const mins = []; for (let i = 0; i < 60; i += TP_MIN_STEP) mins.push(i);
+
+    tpEl.innerHTML =
+      '<div class="sheet-grab"></div>' +
+      '<div class="tp-label" id="tpLabel"></div>' +
+      '<div class="tp-wheels">' +
+        '<div class="tp-wheel" id="tpHour">' + tpOptList(hours) + '</div>' +
+        '<div class="tp-colon">:</div>' +
+        '<div class="tp-wheel" id="tpMin">' + tpOptList(mins) + '</div>' +
+      '</div>' +
+      '<div class="tp-pills" id="tpDay">' +
+        '<button class="tp-pill" data-day="0">Today</button>' +
+        '<button class="tp-pill" data-day="1">Yesterday</button></div>' +
+      '<div class="btn-row"><button class="btn ghost" id="tpCancel">Cancel</button>' +
+        '<button class="btn" id="tpConfirm">Confirm</button></div>';
+
+    const hourWheel = tpEl.querySelector("#tpHour");
+    const minWheel = tpEl.querySelector("#tpMin");
+    const label = tpEl.querySelector("#tpLabel");
+
+    function selIndex(wheel) {
+      return Math.max(0, Math.round(wheel.scrollTop / TP_ROW_H));
+    }
+    function markSel(wheel) {
+      const idx = selIndex(wheel);
+      const opts = wheel.querySelectorAll(".tp-opt");
+      opts.forEach(function (o, i) { o.classList.toggle("sel", i === idx); });
+    }
+    function curHour() { return hours[Math.min(hours.length - 1, selIndex(hourWheel))]; }
+    function curMin() { return mins[Math.min(mins.length - 1, selIndex(minWheel))]; }
+
+    function composeTs() {
+      const base = new Date(); base.setHours(0, 0, 0, 0);
+      base.setDate(base.getDate() - dayOff);
+      base.setHours(curHour(), curMin(), 0, 0);
+      let t = base.getTime();
+      if (t > Date.now()) t = Date.now();
+      return t;
+    }
+    function updateLabel() {
+      markSel(hourWheel); markSel(minWheel);
+      const t = composeTs();
+      label.textContent = fmtDayHead(t) + " " + fmt24(t);
+    }
+    function setPills() {
+      tpEl.querySelectorAll("#tpDay .tp-pill").forEach(function (b) { b.classList.toggle("on", +b.dataset.day === dayOff); });
+    }
+
+    let scrollTimer;
+    function onScroll() { clearTimeout(scrollTimer); scrollTimer = setTimeout(updateLabel, 60); }
+    hourWheel.addEventListener("scroll", onScroll);
+    minWheel.addEventListener("scroll", onScroll);
+
+    tpEl.querySelectorAll("#tpDay .tp-pill").forEach(function (b) {
+      b.addEventListener("click", function () { dayOff = +b.dataset.day; setPills(); updateLabel(); });
+    });
+    tpEl.querySelector("#tpCancel").addEventListener("click", closeTimePicker);
+    tpEl.querySelector("#tpConfirm").addEventListener("click", function () {
+      const ts = composeTs(); const cb = tpConfirmCb; closeTimePicker(); if (cb) cb(ts);
+    });
+
+    tpBackdrop.classList.add("show");
+    tpEl.classList.add("show");
+    setPills();
+    hourWheel.scrollTop = h24 * TP_ROW_H;
+    minWheel.scrollTop = (min / TP_MIN_STEP) * TP_ROW_H;
+    updateLabel();
+  }
+
+  function closeTimePicker() {
+    tpBackdrop.classList.remove("show");
+    tpEl.classList.remove("show");
+    tpConfirmCb = null;
+    if (ringWrap.classList.contains("open")) armDismiss();
+  }
+  tpBackdrop.addEventListener("click", closeTimePicker);
+
   // ---------------- Insights ----------------
   function renderInsights() {
     const body = document.getElementById("insightsBody");
@@ -587,7 +831,7 @@
       body.innerHTML = '<div class="empty">No data yet.<br>Your patterns will appear here once you log a few fits.</div>';
       return;
     }
-    const total = list.length;
+    const total = sumCount(list);
     const days = new Set(list.map(function (f) { return startOfDay(f.ts); })).size;
     const perDay = (total / Math.max(1, days)).toFixed(1);
     const withDur = list.filter(function (f) { return f.durationSeconds != null; });
@@ -619,7 +863,7 @@
 
   function countBy(extractFn) {
     const m = {};
-    active().forEach(function (f) { (extractFn(f) || []).forEach(function (k) { m[k] = (m[k] || 0) + 1; }); });
+    active().forEach(function (f) { const c = fitCount(f); (extractFn(f) || []).forEach(function (k) { m[k] = (m[k] || 0) + c; }); });
     return Object.keys(m).map(function (k) { return { label: k, value: m[k] }; }).sort(function (a, b) { return b.value - a.value; });
   }
   function hbars(rows, emptyMsg) {
@@ -639,13 +883,13 @@
     for (let i = 13; i >= 0; i--) {
       const day = today - i * 86400000;
       labels.push(new Date(day).toLocaleDateString([], { day: "numeric" }));
-      vals.push(list.filter(function (f) { return startOfDay(f.ts) === day; }).length);
+      vals.push(sumCount(list.filter(function (f) { return startOfDay(f.ts) === day; })));
     }
     return svgBars(labels, vals, function (i) { return i % 2 === 0; });
   }
   function barChartHours() {
     const vals = new Array(24).fill(0);
-    active().forEach(function (f) { vals[new Date(f.ts).getHours()]++; });
+    active().forEach(function (f) { vals[new Date(f.ts).getHours()] += fitCount(f); });
     const labels = vals.map(function (_, h) { return h; });
     return svgBars(labels, vals, function (i) { return i % 6 === 0; }, function (h) { return h + "h"; });
   }
@@ -670,13 +914,14 @@
     const sorted = list.slice().sort(function (a, b) { return a.ts - b.ts; });
     const days = new Set(list.map(function (f) { return startOfDay(f.ts); })).size;
     let out = "Fitful seizure log\n";
-    out += "Total fits: " + list.length + " over " + days + " day(s)\n";
+    out += "Total fits: " + sumCount(list) + " over " + days + " day(s)\n";
     out += "Exported: " + new Date().toLocaleString() + "\n\n";
     let lastDay = null;
     sorted.forEach(function (f) {
       const dk = startOfDay(f.ts);
       if (dk !== lastDay) { out += "— " + new Date(f.ts).toLocaleDateString() + " —\n"; lastDay = dk; }
       const parts = [fmtTime(f.ts), SPEECH_LBL[f.speech]];
+      if (fitCount(f) > 1) parts.push("x" + fitCount(f) + " fits");
       if (f.spitting) parts.push("spitting");
       if (f.arm) parts.push("arm movements");
       if (f.environment) parts.push(cap(f.environment));
@@ -689,11 +934,11 @@
     return out;
   }
   function buildCSV() {
-    const head = ["timestamp", "date", "time", "speech", "spitting", "arm_movements", "environment", "duration_seconds", "triggers", "logged_by", "lat", "lng", "accuracy_m", "notes"];
+    const head = ["timestamp", "date", "time", "count", "speech", "spitting", "arm_movements", "environment", "duration_seconds", "triggers", "logged_by", "lat", "lng", "accuracy_m", "notes"];
     const rows = active().slice().sort(function (a, b) { return a.ts - b.ts; }).map(function (f) {
       const d = new Date(f.ts);
       return [
-        new Date(f.ts).toISOString(), d.toLocaleDateString(), d.toLocaleTimeString(),
+        new Date(f.ts).toISOString(), d.toLocaleDateString(), d.toLocaleTimeString(), fitCount(f),
         f.speech, f.spitting ? "yes" : "no", f.arm ? "yes" : "no", f.environment || "",
         f.durationSeconds == null ? "" : f.durationSeconds,
         f.triggers.join("; "), f.by || "", f.lat == null ? "" : f.lat, f.lng == null ? "" : f.lng,
