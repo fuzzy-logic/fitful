@@ -64,7 +64,10 @@
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     position: relative; min-height: 60vh;
   }
-  .ring-wrap { position: relative; width: 300px; height: 300px; display: flex; align-items: center; justify-content: center; }
+  .ring-wrap { position: relative; width: 410px; height: 410px; display: flex; align-items: center; justify-content: center; }
+  .ring-pie { position: absolute; top: 0; left: 0; width: 410px; height: 410px; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .25s; }
+  .ring-wrap.open .ring-pie { opacity: 1; }
+  .ring-pie text { font: 700 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: 1.5px; }
   #logBtn {
     width: 150px; height: 150px; border-radius: 50%; border: none; cursor: pointer;
     background: radial-gradient(circle at 35% 30%, #6f9bff, #3b6fe0);
@@ -89,17 +92,15 @@
   }
   .ring-wrap.open .satellite { opacity: 1; pointer-events: auto; }
   .satellite .grp { display:block; font-size: 8px; color: inherit; opacity: .7; font-weight:700; letter-spacing:.4px; }
-  /* Resting state: each category gets its own colour family so groups read at a glance */
-  .satellite[data-group="speech"]      { border-color: rgba(91,140,255,.55);  background: rgba(91,140,255,.12);  color: #cfe0ff; }
-  .satellite[data-group="spitting"]    { border-color: rgba(251,191,36,.55);  background: rgba(251,191,36,.12);  color: #ffe7b3; }
-  .satellite[data-group="arm"]         { border-color: rgba(192,132,252,.55); background: rgba(192,132,252,.12); color: #e9d5ff; }
-  .satellite[data-group="environment"] { border-color: rgba(52,211,153,.55);  background: rgba(52,211,153,.12);  color: #b6f0d8; }
+  /* Resting state: each display category gets its own colour family so groups read at a glance */
+  .satellite[data-cat="speech"]   { border-color: rgba(91,140,255,.55); background: rgba(91,140,255,.12); color: #cfe0ff; }
+  .satellite[data-cat="motor"]    { border-color: rgba(251,191,36,.55); background: rgba(251,191,36,.12); color: #ffe7b3; }
+  .satellite[data-cat="location"] { border-color: rgba(52,211,153,.55); background: rgba(52,211,153,.12); color: #b6f0d8; }
   /* Selected state: stronger fill + glow ring in the category colour */
   .satellite.sel { border-color: currentColor; }
-  .satellite[data-group="speech"].sel      { color: var(--speech); background: rgba(91,140,255,.28);  box-shadow: 0 0 0 3px rgba(91,140,255,.3); }
-  .satellite[data-group="spitting"].sel    { color: var(--spit);   background: rgba(251,191,36,.28);  box-shadow: 0 0 0 3px rgba(251,191,36,.3); }
-  .satellite[data-group="environment"].sel { color: var(--env);    background: rgba(52,211,153,.28);  box-shadow: 0 0 0 3px rgba(52,211,153,.3); }
-  .satellite[data-group="arm"].sel         { color: var(--arm);    background: rgba(192,132,252,.28); box-shadow: 0 0 0 3px rgba(192,132,252,.3); }
+  .satellite[data-cat="speech"].sel   { color: var(--speech); background: rgba(91,140,255,.28); box-shadow: 0 0 0 3px rgba(91,140,255,.3); }
+  .satellite[data-cat="motor"].sel    { color: var(--spit);   background: rgba(251,191,36,.28); box-shadow: 0 0 0 3px rgba(251,191,36,.3); }
+  .satellite[data-cat="location"].sel { color: var(--env);    background: rgba(52,211,153,.28); box-shadow: 0 0 0 3px rgba(52,211,153,.3); }
 
   .today-count { margin-top: 18px; color: var(--muted); font-size: 14px; text-align: center; }
   .today-count b { color: var(--text); font-size: 30px; display:block; font-weight: 800; }
@@ -376,17 +377,24 @@
 
   // ---------------- Log screen + radial menu ----------------
   const SAT = [
-    { group: "speech",      value: "normal",  label: "Speech<span class='grp'>OK</span>" },
-    { group: "speech",      value: "slurred", label: "Slurred" },
-    { group: "speech",      value: "none",    label: "No<br>speech" },
-    { group: "spitting",    value: true,      label: "Spitting" },
-    { group: "arm",         value: true,      label: "Arm<br>movements" },
-    { group: "environment", value: "home",    label: "Home" },
-    { group: "environment", value: "car",     label: "Car" },
-    { group: "environment", value: "walking", label: "Walking" },
-    { group: "environment", value: "other",   label: "Other" },
+    { cat: "speech",   group: "speech",      value: "normal",  label: "OK" },
+    { cat: "speech",   group: "speech",      value: "slurred", label: "Slurred" },
+    { cat: "speech",   group: "speech",      value: "apraxic", label: "Apraxic" },
+    { cat: "speech",   group: "speech",      value: "none",    label: "None" },
+    { cat: "motor",    group: "spitting",    value: true,      label: "Spitting" },
+    { cat: "motor",    group: "arm",         value: true,      label: "Arms" },
+    { cat: "location", group: "environment", value: "home",    label: "Home" },
+    { cat: "location", group: "environment", value: "car",     label: "Car" },
+    { cat: "location", group: "environment", value: "walking", label: "Walking" },
+    { cat: "location", group: "environment", value: "other",   label: "Other" },
   ];
-  const RADIUS = 115;
+  const RADIUS = 140;
+  // Display-category colours for the ring donut wedges + their satellites.
+  const CAT = {
+    speech:   { fill: "rgba(91,140,255,.20)", ink: "#5b8cff", label: "Speech" },
+    motor:    { fill: "rgba(251,191,36,.20)", ink: "#fbbf24", label: "Motor" },
+    location: { fill: "rgba(52,211,153,.20)", ink: "#34d399", label: "Location" },
+  };
 
   const ringWrap = document.getElementById("ringWrap");
   const logBtn = document.getElementById("logBtn");
@@ -406,7 +414,7 @@
     const y = Math.sin(angle) * RADIUS;
     const el = document.createElement("button");
     el.className = "satellite";
-    el.dataset.group = s.group;
+    el.dataset.cat = s.cat;
     el.dataset.idx = i;
     el.innerHTML = s.label;
     el.style.setProperty("--x", x + "px");
@@ -415,6 +423,52 @@
     ringWrap.appendChild(el);
     satEls.push(el);
   });
+
+  // Labelled category donut wedges behind the ring (always visible).
+  buildRingPie();
+  function buildRingPie() {
+    const C = 205, R_IN = 92, R_OUT = 200, R_LBL = 189;
+    const step = 360 / SAT.length, half = step / 2, gap = 2;
+    const pol = function (r, deg) {
+      const a = deg * Math.PI / 180;
+      return [(C + r * Math.cos(a)).toFixed(2), (C + r * Math.sin(a)).toFixed(2)];
+    };
+    const donut = function (a0, a1) {
+      const oa = pol(R_OUT, a0), ob = pol(R_OUT, a1), ib = pol(R_IN, a1), ia = pol(R_IN, a0);
+      const large = (a1 - a0) > 180 ? 1 : 0;
+      return "M" + oa[0] + " " + oa[1] + "A" + R_OUT + " " + R_OUT + " 0 " + large + " 1 " + ob[0] + " " + ob[1] +
+        "L" + ib[0] + " " + ib[1] + "A" + R_IN + " " + R_IN + " 0 " + large + " 0 " + ia[0] + " " + ia[1] + "Z";
+    };
+    // Arc for the curved label; reversed on the lower half so text stays upright.
+    const labelArc = function (a0, a1) {
+      const mid = (a0 + a1) / 2, large = (a1 - a0) > 180 ? 1 : 0;
+      if (Math.sin(mid * Math.PI / 180) > 0.05) {
+        const p0 = pol(R_LBL, a1), p1 = pol(R_LBL, a0);
+        return "M" + p0[0] + " " + p0[1] + "A" + R_LBL + " " + R_LBL + " 0 " + large + " 0 " + p1[0] + " " + p1[1];
+      }
+      const p0 = pol(R_LBL, a0), p1 = pol(R_LBL, a1);
+      return "M" + p0[0] + " " + p0[1] + "A" + R_LBL + " " + R_LBL + " 0 " + large + " 1 " + p1[0] + " " + p1[1];
+    };
+    // Contiguous runs by category.
+    const runs = [];
+    SAT.forEach(function (s, i) {
+      const last = runs[runs.length - 1];
+      if (last && last.cat === s.cat) last.end = i;
+      else runs.push({ cat: s.cat, start: i, end: i });
+    });
+    let paths = "", labels = "";
+    runs.forEach(function (r) {
+      const a0 = (-90 + r.start * step) - half + gap;
+      const a1 = (-90 + r.end * step) + half - gap;
+      const c = CAT[r.cat];
+      paths += '<path d="' + donut(a0, a1) + '" fill="' + c.fill + '"></path>';
+      labels += '<path id="rp-' + r.cat + '" d="' + labelArc(a0, a1) + '" fill="none"></path>' +
+        '<text fill="' + c.ink + '"><textPath href="#rp-' + r.cat + '" startOffset="50%" text-anchor="middle">' +
+        c.label.toUpperCase() + '</textPath></text>';
+    });
+    ringWrap.insertAdjacentHTML("afterbegin",
+      '<svg class="ring-pie" viewBox="0 0 410 410" aria-hidden="true">' + paths + labels + '</svg>');
+  }
 
   function openRing() {
     ringWrap.classList.add("open");
@@ -566,7 +620,7 @@
     if (s === yday) return "Yesterday";
     return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
   }
-  const SPEECH_LBL = { normal: "Speech OK", slurred: "Slurred", none: "No speech" };
+  const SPEECH_LBL = { normal: "Speech OK", slurred: "Slurred", apraxic: "Apraxic", none: "No speech" };
   function fmtDuration(sec) {
     if (sec == null) return null;
     if (sec < 60) return sec + "s";
@@ -644,7 +698,7 @@
     const trigChips = triggerVocab.map(function (t) {
       return '<button class="chip trig-chip ' + (f.triggers.indexOf(t) >= 0 ? "on" : "") + '" data-trig="' + esc(t) + '">' + esc(t) + '</button>';
     }).join("");
-    const speechChips = ["normal", "slurred", "none"].map(function (v) {
+    const speechChips = ["normal", "slurred", "apraxic", "none"].map(function (v) {
       return '<button class="chip sp-chip ' + (f.speech === v ? "on" : "") + '" data-speech="' + v + '">' + SPEECH_LBL[v] + '</button>';
     }).join("");
     const envChips = ["home", "car", "walking", "other"].map(function (v) {
