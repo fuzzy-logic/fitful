@@ -68,19 +68,11 @@
   .ring-pie { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 420px; height: 420px; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .25s; }
   .ring-wrap.open .ring-pie { opacity: 1; }
   .ring-pie text { font: 700 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: 1.5px; }
-  @media (max-width: 460px) { .log-stage { overflow: hidden; } .ring-wrap { transform: scale(0.92); } }
-  @media (max-width: 400px) { .ring-wrap { transform: scale(0.84); } }
-  @media (max-width: 360px) { .ring-wrap { transform: scale(0.76); } }
-  /* Short screens: shrink the ring a touch and reclaim its dead layout height so the clock/stepper clear the bottom nav. */
-  @media (max-height: 720px) {
-    .ring-wrap { transform: scale(0.82); margin-bottom: -84px; }
-    .fit-clock { margin-top: 8px; }
-    .ring-count { margin-top: 8px; gap: 6px; }
-  }
-  @media (max-height: 640px) {
-    .ring-wrap { transform: scale(0.76); margin-bottom: -92px; }
-    .fit-clock { margin-top: 4px; padding: 8px 16px; }
-  }
+  @media (max-width: 460px) { .log-stage { overflow: hidden; } }
+  /* The open dial is scaled to fit the *visible* viewport by fitOpenRing() in JS, which
+     tracks the mobile URL bar via visualViewport. transform-origin + negative margin let
+     the scaled wheel reclaim its dead layout height so the controls clear the bottom nav. */
+  .ring-wrap { transform: scale(var(--ring-scale, 1)); transform-origin: top center; }
   #logBtn {
     width: 150px; height: 150px; border-radius: 50%; border: none; cursor: pointer;
     background: radial-gradient(circle at 35% 30%, #6f9bff, #3b6fe0);
@@ -207,21 +199,25 @@
 
   /* ---------- Editable fit clock (shown while logging) ---------- */
   .fit-clock {
-    display: flex; align-items: center; gap: 12px; margin: 20px auto 0;
-    background: var(--card); border: 1.5px solid var(--accent); border-radius: 14px;
-    padding: 12px 18px; cursor: pointer; color: var(--text); text-align: left;
-    box-shadow: 0 4px 16px rgba(91,140,255,.18);
+    display: flex; align-items: center; gap: 10px; margin: 0 auto 8px;
+    background: var(--card); border: none; border-radius: 11px;
+    padding: 10px 14px; cursor: pointer; color: var(--text); text-align: left;
+    box-shadow: 0 4px 14px rgba(0,0,0,.25);
   }
   .fit-clock[hidden] { display: none; }
+  /* Container for the open dial's count stepper, below the wheel. */
+  #openControls { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+  #openControls[hidden] { display: none; }
+  #openControls .ring-count { margin: 0; }
   .fit-clock:active { transform: scale(.97); }
-  .fit-clock .fc-icon { font-size: 24px; }
+  .fit-clock .fc-icon { font-size: 19px; }
   .fit-clock .fc-text { display: flex; flex-direction: column; line-height: 1.15; }
-  .fit-clock .fc-text b { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .fit-clock .fc-text small { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .fit-clock .fc-text b { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .fit-clock .fc-text small { font-size: 10px; color: var(--muted); font-weight: 600; }
   .fit-clock .fc-edit {
     margin-left: auto; display: flex; align-items: center; justify-content: center;
-    width: 38px; height: 38px; border-radius: 50%; background: rgba(91,140,255,.15);
-    color: var(--accent); font-size: 18px;
+    width: 30px; height: 30px; border-radius: 50%; background: rgba(91,140,255,.15);
+    color: var(--accent); font-size: 14px;
   }
 
   /* ---------- Time picker (drum/wheel) ---------- */
@@ -271,6 +267,10 @@
   .count-badge.symptom { background: rgba(251,191,36,.18); color: var(--spit); font-size: 12px; }
   .ring-count { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 14px auto 0; }
   .ring-count[hidden] { display: none; }
+  /* Open-dial count incrementor sized down 20% (editor stepper unaffected). */
+  .ring-count .stepper { gap: 14px; }
+  .ring-count .step-btn { width: 42px; height: 42px; font-size: 22px; }
+  .ring-count .stepper b { font-size: 24px; min-width: 35px; }
   .ring-count .rc-label { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
 </style>
 </head>
@@ -280,6 +280,11 @@
   <section id="log-view" class="view active">
     <div class="head-row"><h1>Fitful</h1><button id="settingsBtn" aria-label="Settings">⚙</button></div>
     <div class="log-stage">
+      <button id="fitClock" class="fit-clock" hidden aria-label="Edit time">
+        <span class="fc-icon">&#128339;</span>
+        <span class="fc-text"><b id="fcTime">--:--</b><small id="fcDay">Today</small></span>
+        <span class="fc-edit">&#9998;</span>
+      </button>
       <div class="ring-wrap" id="ringWrap">
         <button id="logBtn">LOG<small id="logHint"></small></button>
       </div>
@@ -288,17 +293,14 @@
         <div class="last-log" id="lastLog" hidden>Last log &middot; <a id="lastLogLink" class="link"></a></div>
       </div>
       <div class="sync-status" id="syncStatus"></div>
-      <button id="fitClock" class="fit-clock" hidden aria-label="Edit time">
-        <span class="fc-icon">&#128339;</span>
-        <span class="fc-text"><b id="fcTime">--:--</b><small id="fcDay">Today</small></span>
-        <span class="fc-edit">&#9998;</span>
-      </button>
-      <div id="ringCount" class="ring-count" hidden>
-        <span class="rc-label">Number of fits</span>
-        <div class="stepper">
-          <button class="step-btn" id="ringCountMinus" aria-label="Fewer">&minus;</button>
-          <b id="ringCountVal">1</b>
-          <button class="step-btn" id="ringCountPlus" aria-label="More">+</button>
+      <div id="openControls" hidden>
+        <div id="ringCount" class="ring-count" hidden>
+          <span class="rc-label">Number of fits</span>
+          <div class="stepper">
+            <button class="step-btn" id="ringCountMinus" aria-label="Fewer">&minus;</button>
+            <b id="ringCountVal">1</b>
+            <button class="step-btn" id="ringCountPlus" aria-label="More">+</button>
+          </div>
         </div>
       </div>
     </div>
@@ -537,6 +539,7 @@
       el.style.transform = "translate(" + el.style.getPropertyValue("--x") + "," + el.style.getPropertyValue("--y") + ") scale(1)";
     });
     renderFitClock();
+    document.getElementById("openControls").hidden = false;
     fitClock.hidden = false;
     ringCount.hidden = false;
     if (currentFit) {
@@ -544,6 +547,7 @@
       document.querySelector("#ringCount .rc-label").textContent =
         isSymptom(currentFit) ? "Symptom episode — no fit" : "Number of fits";
     }
+    fitOpenRing();
   }
   function closeRing() {
     ringWrap.classList.remove("open");
@@ -552,9 +556,35 @@
     logHint.innerHTML = "";
     satEls.forEach(function (el) { el.style.transform = "translate(0,0) scale(.4)"; });
     currentFit = null;
+    document.getElementById("openControls").hidden = true;
     fitClock.hidden = true;
     ringCount.hidden = true;
     clearTimeout(dismissTimer);
+    fitOpenRing();
+  }
+  function fitOpenRing() {
+    var stage = document.querySelector(".log-stage");
+    if (!stage || !ringWrap) return;
+    var vv = window.visualViewport;
+    var stageRect = stage.getBoundingClientRect();
+    var rwTop = ringWrap.getBoundingClientRect().top; // below the time box when open
+    var visibleBottom = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
+    // Space from the top of the wheel down to the nav (or URL-bar-reduced bottom).
+    var avail = Math.min(stageRect.bottom, visibleBottom) - rwTop - 8;
+    var open = ringWrap.classList.contains("open");
+    var oc = document.getElementById("openControls");
+    var controlsH = (open && oc && !oc.hidden) ? oc.getBoundingClientRect().height + 14 : 0;
+    var vw = vv ? vv.width : window.innerWidth;
+    var widthScale = (Math.min(window.innerWidth, vw) - 24) / 420;
+    var heightScale = (avail - controlsH) / 420;
+    var scale = Math.max(0.55, Math.min(1, heightScale, widthScale));
+    ringWrap.style.setProperty("--ring-scale", scale.toFixed(3));
+    ringWrap.style.marginBottom = Math.round(-420 * (1 - scale)) + "px";
+  }
+  window.addEventListener("resize", fitOpenRing);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", fitOpenRing);
+    window.visualViewport.addEventListener("scroll", fitOpenRing);
   }
   function renderFitClock() {
     if (!currentFit) return;
@@ -1344,6 +1374,7 @@
 
   updateTodayCount();
   refreshSyncStatus();
+  fitOpenRing();
 
   function maybeSync() { if (spaceCode && navigator.onLine && !document.hidden) syncNow(); }
 
