@@ -203,8 +203,9 @@
     background: var(--card); border: none; border-radius: 11px;
     padding: 10px 14px; cursor: pointer; color: var(--text); text-align: left;
     box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    visibility: hidden; /* reserve space when closed so the LOG button centre matches the open Done button */
   }
-  .fit-clock[hidden] { display: none; }
+  .fit-clock.show { visibility: visible; }
   /* Container for the open dial's count stepper, below the wheel. */
   #openControls { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
   #openControls[hidden] { display: none; }
@@ -540,7 +541,7 @@
     });
     renderFitClock();
     document.getElementById("openControls").hidden = false;
-    fitClock.hidden = false;
+    fitClock.classList.add("show");
     ringCount.hidden = false;
     if (currentFit) {
       document.getElementById("ringCountVal").textContent = currentFit.count;
@@ -557,11 +558,12 @@
     satEls.forEach(function (el) { el.style.transform = "translate(0,0) scale(.4)"; });
     currentFit = null;
     document.getElementById("openControls").hidden = true;
-    fitClock.hidden = true;
+    fitClock.classList.remove("show");
     ringCount.hidden = true;
     clearTimeout(dismissTimer);
     fitOpenRing();
   }
+  var lastControlsH = 96; // approx count-stepper height; refined from the live element when open
   function fitOpenRing() {
     var stage = document.querySelector(".log-stage");
     if (!stage || !ringWrap) return;
@@ -573,7 +575,10 @@
     var avail = Math.min(stageRect.bottom, visibleBottom) - rwTop - 8;
     var open = ringWrap.classList.contains("open");
     var oc = document.getElementById("openControls");
-    var controlsH = (open && oc && !oc.hidden) ? oc.getBoundingClientRect().height + 14 : 0;
+    // Reserve the same controls height whether open or closed so the wheel scale —
+    // and therefore the LOG/Done button centre — is identical in both states.
+    if (open && oc && !oc.hidden) lastControlsH = oc.getBoundingClientRect().height + 14;
+    var controlsH = lastControlsH;
     var vw = vv ? vv.width : window.innerWidth;
     var widthScale = (Math.min(window.innerWidth, vw) - 24) / 420;
     var heightScale = (avail - controlsH) / 420;
