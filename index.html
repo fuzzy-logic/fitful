@@ -62,56 +62,60 @@
   #log-view.active { display: flex; flex-direction: column; }
   .log-stage {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-    position: relative; min-height: 60vh; padding-top: 8px;
+    position: relative; min-height: 60vh; padding-top: 6px;
   }
-  .ring-wrap { position: relative; width: 420px; height: 420px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-  .ring-pie { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 420px; height: 420px; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .25s; }
-  .ring-wrap.open .ring-pie { opacity: 1; }
-  .ring-pie text { font: 700 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: 1.5px; }
-  @media (max-width: 460px) { .log-stage { overflow: hidden; } }
-  /* The open dial is scaled to fit the *visible* viewport by fitOpenRing() in JS, which
-     tracks the mobile URL bar via visualViewport. transform-origin + negative margin let
-     the scaled wheel reclaim its dead layout height so the controls clear the bottom nav. */
-  .ring-wrap { transform: scale(var(--ring-scale, 1)); transform-origin: top center; }
-  #logBtn {
-    width: 150px; height: 150px; border-radius: 50%; border: none; cursor: pointer;
+  .log-head { text-align: center; margin: 2px 0 4px; }
+  .log-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    width: 100%; max-width: 460px; margin: 6px auto 0;
+  }
+  .cube {
+    border: 1.5px solid var(--line); background: var(--card); color: var(--text);
+    border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    gap: 6px; padding: 8px 6px; height: 132px; cursor: default; text-align: center; overflow: hidden;
+    transition: border-color .2s, background .2s;
+  }
+  .cube[data-tile="when"] { gap: 4px; }
+  .cube .cube-label { font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); flex: 0 0 auto; }
+  .cube[data-cat="speech"]   .cube-label { color: var(--speech); }
+  .cube[data-cat="motor"]    .cube-label { color: var(--spit); }
+  .cube[data-cat="location"] .cube-label { color: var(--env); }
+  /* Chip area scrolls inside the cube when a category has many options (e.g. Triggers),
+     so every cube stays the same height and the 3×3 grid stays compact on small phones. */
+  .cube-opts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-content: flex-start; width: 100%; flex: 1 1 auto; overflow-y: auto; scrollbar-width: none; }
+  .cube-opts::-webkit-scrollbar { display: none; }
+  .mini {
+    border: 1px solid var(--line); background: var(--bg2); color: var(--text);
+    border-radius: 10px; padding: 6px 9px; font-size: 15.75px; font-weight: 700; line-height: 1.05; cursor: pointer;
+  }
+  .mini:active { transform: scale(.93); }
+  .mini.add { border-style: dashed; color: var(--muted); }
+  .mini.on { border-color: var(--accent); background: rgba(91,140,255,.22); color: #cfe0ff; }
+  .cube[data-cat="speech"]   .mini.on { border-color: var(--speech); background: rgba(91,140,255,.22); color: #cfe0ff; }
+  .cube[data-cat="motor"]    .mini.on { border-color: var(--spit);   background: rgba(251,191,36,.22); color: #ffe7b3; }
+  .cube[data-cat="location"] .mini.on { border-color: var(--env);    background: rgba(52,211,153,.22); color: #b6f0d8; }
+  /* When cube (time + count) */
+  .when-time { border: 1px solid var(--line); background: var(--bg2); color: var(--text); border-radius: 10px; padding: 4px 12px; font-size: 19.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums; }
+  .when-count { display: flex; align-items: center; gap: 12px; }
+  .when-count button { width: 39px; height: 39px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--card); color: var(--text); font-size: 22.5px; font-weight: 700; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .when-count b { font-size: 22.5px; font-weight: 800; min-width: 21px; font-variant-numeric: tabular-nums; }
+  .when-sx { font-size: 14.25px; font-weight: 800; color: var(--spit); text-transform: uppercase; letter-spacing: .4px; }
+  /* Notes cube */
+  .notes-open { border: 1px dashed var(--line); background: transparent; color: var(--muted); border-radius: 10px; padding: 7px 15px; font-size: 16.5px; font-weight: 700; cursor: pointer; }
+  .notes-open.has { border-style: solid; border-color: var(--accent); color: #cfe0ff; }
+  /* Idle (before LOG): outer cubes hidden, centre LOG alone — like the closed wheel. */
+  .log-grid.idle .cube:not(.cube-log) { visibility: hidden; }
+  .cube-log {
+    border: none; color: #fff; font-size: 22px; font-weight: 800; letter-spacing: .5px;
+    justify-content: center; align-items: center;
     background: radial-gradient(circle at 35% 30%, #6f9bff, #3b6fe0);
-    color: #fff; font-size: 22px; font-weight: 800; letter-spacing: .5px;
-    box-shadow: 0 12px 36px rgba(59,111,224,.45), inset 0 -6px 14px rgba(0,0,0,.18);
-    z-index: 5; transition: transform .12s ease, background .2s;
-    display: flex; align-items: center; justify-content: center; text-align: center;
+    box-shadow: 0 10px 28px rgba(59,111,224,.42), inset 0 -5px 12px rgba(0,0,0,.18);
   }
-  #logBtn:active { transform: scale(.94); }
-  #logBtn.open { width: 75px; height: 75px; font-size: 15px; background: radial-gradient(circle at 35% 30%, #4be0a0, #1fae78); box-shadow: 0 8px 24px rgba(31,174,120,.4); }
-  #logBtn small { display:block; font-size: 11px; font-weight:600; opacity:.85; margin-top:3px; }
-
-  .satellite {
-    position: absolute; top: 50%; left: 50%;
-    width: 52px; height: 52px; margin: -26px 0 0 -26px;
-    border-radius: 50%; border: 2px solid var(--line);
-    background: var(--card); color: var(--text);
-    font-size: 11px; font-weight: 700; line-height: 1.15; text-align: center;
-    display: flex; align-items: center; justify-content: center; padding: 4px;
-    opacity: 0; transform: translate(0,0) scale(.4); pointer-events: none;
-    transition: transform .28s cubic-bezier(.2,.9,.3,1.2), opacity .2s; cursor: pointer; z-index: 4;
-  }
-  .ring-wrap.open .satellite { opacity: 1; pointer-events: auto; }
-  .satellite .grp { display:block; font-size: 8px; color: inherit; opacity: .7; font-weight:700; letter-spacing:.4px; }
-  /* Resting state: each display category gets its own colour family so groups read at a glance */
-  .satellite[data-cat="speech"]   { border-color: rgba(91,140,255,.55); background: rgba(91,140,255,.12); color: #cfe0ff; }
-  .satellite[data-cat="motor"]    { border-color: rgba(251,191,36,.55); background: rgba(251,191,36,.12); color: #ffe7b3; }
-  .satellite[data-cat="location"] { border-color: rgba(52,211,153,.55); background: rgba(52,211,153,.12); color: #b6f0d8; }
-  /* Selected state: stronger fill + glow ring in the category colour */
-  .satellite.sel { border-color: currentColor; }
-  .satellite[data-cat="speech"].sel   { color: var(--speech); background: rgba(91,140,255,.28); box-shadow: 0 0 0 3px rgba(91,140,255,.3); }
-  .satellite[data-cat="motor"].sel    { color: var(--spit);   background: rgba(251,191,36,.28); box-shadow: 0 0 0 3px rgba(251,191,36,.3); }
-  .satellite[data-cat="location"].sel { color: var(--env);    background: rgba(52,211,153,.28); box-shadow: 0 0 0 3px rgba(52,211,153,.3); }
-
-  .log-meta { margin-top: 16px; text-align: center; }
-  .ring-wrap.open ~ .log-meta, .ring-wrap.open ~ .sync-status { display: none; }
-  .today-count { color: var(--muted); font-size: 14px; }
-  .today-count b { color: var(--text); font-size: 30px; display:block; font-weight: 800; }
-  .last-log { margin-top: 8px; color: var(--muted); font-size: 13px; }
+  .cube-log:active { transform: scale(.94); }
+  .cube-log.done { background: radial-gradient(circle at 35% 30%, #4be0a0, #1fae78); box-shadow: 0 8px 24px rgba(31,174,120,.4); }
+  .today-count { color: var(--muted); font-size: 13px; }
+  .today-count b { color: var(--text); font-size: 22px; font-weight: 800; margin-right: 5px; }
+  .last-log { margin-top: 4px; color: var(--muted); font-size: 13px; }
   .last-log[hidden] { display: none; }
   .last-log .link { color: var(--accent); text-decoration: underline; cursor: pointer; font-weight: 700; }
   #toast {
@@ -197,29 +201,17 @@
   .field input { width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; color: var(--text); padding: 12px; font: inherit; }
   .note { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
 
-  /* ---------- Editable fit clock (shown while logging) ---------- */
-  .fit-clock {
-    display: flex; align-items: center; gap: 10px; margin: 0 auto 8px;
-    background: var(--card); border: none; border-radius: 11px;
-    padding: 10px 14px; cursor: pointer; color: var(--text); text-align: left;
-    box-shadow: 0 4px 14px rgba(0,0,0,.25);
-    visibility: hidden; /* reserve space when closed so the LOG button centre matches the open Done button */
+  /* ---------- Tile panel (per-category bottom sheet) ---------- */
+  #tilePanel-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 62; }
+  #tilePanel-backdrop.show { opacity: 1; pointer-events: auto; }
+  #tilePanel {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 63;
+    background: var(--bg2); border-radius: 18px 18px 0 0; border-top: 1px solid var(--line);
+    padding: 16px 16px calc(20px + var(--safe-bottom)); transform: translateY(100%); transition: transform .25s ease;
+    max-height: 90vh; overflow-y: auto;
   }
-  .fit-clock.show { visibility: visible; }
-  /* Container for the open dial's count stepper, below the wheel. */
-  #openControls { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
-  #openControls[hidden] { display: none; }
-  #openControls .ring-count { margin: 0; }
-  .fit-clock:active { transform: scale(.97); }
-  .fit-clock .fc-icon { font-size: 19px; }
-  .fit-clock .fc-text { display: flex; flex-direction: column; line-height: 1.15; }
-  .fit-clock .fc-text b { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .fit-clock .fc-text small { font-size: 10px; color: var(--muted); font-weight: 600; }
-  .fit-clock .fc-edit {
-    margin-left: auto; display: flex; align-items: center; justify-content: center;
-    width: 30px; height: 30px; border-radius: 50%; background: rgba(91,140,255,.15);
-    color: var(--accent); font-size: 14px;
-  }
+  #tilePanel.show { transform: translateY(0); }
+  .tp-panel-head { font-size: 18px; font-weight: 800; text-align: center; margin: 2px 0 14px; }
 
   /* ---------- Time picker (drum/wheel) ---------- */
   #tp-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 70; }
@@ -266,13 +258,6 @@
   .stepper b { font-size: 30px; font-weight: 800; min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; }
   .count-badge { display: inline-block; margin-left: 8px; background: rgba(91,140,255,.18); color: #cfe0ff; border-radius: 999px; padding: 1px 9px; font-size: 14px; font-weight: 800; vertical-align: middle; }
   .count-badge.symptom { background: rgba(251,191,36,.18); color: var(--spit); font-size: 12px; }
-  .ring-count { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 14px auto 0; }
-  .ring-count[hidden] { display: none; }
-  /* Open-dial count incrementor sized down 20% (editor stepper unaffected). */
-  .ring-count .stepper { gap: 14px; }
-  .ring-count .step-btn { width: 42px; height: 42px; font-size: 22px; }
-  .ring-count .stepper b { font-size: 24px; min-width: 35px; }
-  .ring-count .rc-label { font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
 </style>
 </head>
 <body>
@@ -281,29 +266,12 @@
   <section id="log-view" class="view active">
     <div class="head-row"><h1>Fitful</h1><button id="settingsBtn" aria-label="Settings">⚙</button></div>
     <div class="log-stage">
-      <button id="fitClock" class="fit-clock" hidden aria-label="Edit time">
-        <span class="fc-icon">&#128339;</span>
-        <span class="fc-text"><b id="fcTime">--:--</b><small id="fcDay">Today</small></span>
-        <span class="fc-edit">&#9998;</span>
-      </button>
-      <div class="ring-wrap" id="ringWrap">
-        <button id="logBtn">LOG<small id="logHint"></small></button>
-      </div>
-      <div class="log-meta">
-        <div class="today-count"><b id="todayCount">0</b> logged today</div>
+      <div class="log-head">
+        <div class="today-count"><b id="todayCount">0</b>logged today</div>
         <div class="last-log" id="lastLog" hidden>Last log &middot; <a id="lastLogLink" class="link"></a></div>
+        <div class="sync-status" id="syncStatus"></div>
       </div>
-      <div class="sync-status" id="syncStatus"></div>
-      <div id="openControls" hidden>
-        <div id="ringCount" class="ring-count" hidden>
-          <span class="rc-label">Number of fits</span>
-          <div class="stepper">
-            <button class="step-btn" id="ringCountMinus" aria-label="Fewer">&minus;</button>
-            <b id="ringCountVal">1</b>
-            <button class="step-btn" id="ringCountPlus" aria-label="More">+</button>
-          </div>
-        </div>
-      </div>
+      <div class="log-grid idle" id="logGrid"></div>
     </div>
   </section>
 
@@ -329,6 +297,8 @@
 <div id="toast"></div>
 <div id="sheet-backdrop"></div>
 <div id="sheet"></div>
+<div id="tilePanel-backdrop"></div>
+<div id="tilePanel"></div>
 <div id="tp-backdrop"></div>
 <div id="tp"></div>
 
@@ -338,7 +308,7 @@
   // ---------------- Storage ----------------
   const FITS_KEY = "fitrack.fits.v1";
   const TRIG_KEY = "fitrack.triggers.v1";
-  const SEED_TRIGGERS = ["Stress", "Tiredness", "Poor sleep", "Hunger", "Sensory overload", "Strong emotion", "Heat", "Exertion"];
+  const SEED_TRIGGERS = ["Stress", "Tiredness", "Poor sleep", "Hunger", "Sensory overload", "Emotions", "Heat", "Exertion"];
 
   function load(key, fallback) {
     try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
@@ -400,261 +370,225 @@
     );
   }
 
-  // ---------------- Log screen + radial menu ----------------
-  // Boolean Motor symptom flags — drives the ring, editor, Review pills, summary and CSV.
-  // Add a future Motor button by adding one entry here and one in RING_LAYOUT.
+  // ---------------- Log screen (3×3 cube grid) ----------------
+  // Boolean Motor symptom flags — drives the grid, editor, Review pills, summary and CSV.
+  // Add a future Motor flag by adding one entry here (grouped oral/involuntary for the grid).
   const MOTOR_FLAGS = [
-    { key: "spitting",   label: "Spitting",    csv: "spitting" },
-    { key: "dribbling",  label: "Dribbling",   csv: "dribbling" },
-    { key: "arm",        label: "Arms",        csv: "arm_movements" },
-    { key: "legs",       label: "Legs",        csv: "legs" },
-    { key: "mouthClick", label: "Mouth click", csv: "mouth_click" },
-    { key: "mouthPop",   label: "Mouth pop",   csv: "mouth_pop" },
+    { key: "spitting",   label: "Spitting",  csv: "spitting",      group: "oral" },
+    { key: "dribbling",  label: "Dribbling", csv: "dribbling",     group: "oral" },
+    { key: "mouthClick", label: "Clicking",  csv: "mouth_click",   group: "oral" },
+    { key: "mouthPop",   label: "Popping",   csv: "mouth_pop",     group: "oral" },
+    { key: "laughing",   label: "Laughing",  csv: "laughing",      group: "involuntary" },
+    { key: "arm",        label: "Arms",      csv: "arm_movements", group: "involuntary" },
+    { key: "legs",       label: "Legs",      csv: "legs",          group: "involuntary" },
+    { key: "head",       label: "Head",      csv: "head",          group: "involuntary" },
   ];
 
-  // Two concentric rings of buttons grouped by display category. Each category occupies a
-  // run of angular "columns"; a column holds an inner + outer button at the same angle.
-  const RING_LAYOUT = [
-    { cat: "speech",
-      inner: [ { group: "speech", value: "normal",  label: "OK" },
-               { group: "speech", value: "slurred", label: "Slurred" } ],
-      outer: [ { group: "speech", value: "apraxic", label: "Apraxic" },
-               { group: "speech", value: "none",    label: "None" } ] },
-    { cat: "motor",
-      inner: [ { group: "mouthClick", value: true, label: "Mouth<br>click" },
-               { group: "spitting",   value: true, label: "Spitting" },
-               { group: "arm",        value: true, label: "Arms" } ],
-      outer: [ { group: "mouthPop",   value: true, label: "Mouth<br>pop" },
-               { group: "dribbling",  value: true, label: "Dribbling" },
-               { group: "legs",       value: true, label: "Legs" } ] },
-    { cat: "location",
-      inner: [ { group: "environment", value: "home", label: "Home" },
-               { group: "environment", value: "car",  label: "Car" } ],
-      outer: [ { group: "environment", value: "walking", label: "Walking" },
-               { group: "environment", value: "other",   label: "Other" } ] },
+  // Single-select option lists, shared by the grid tile panels AND the editor chip rows
+  // so the two never drift. Order = display order.
+  const SPEECH_OPTS = [
+    { value: "normal",    label: "Speech OK" },
+    { value: "none",      label: "No speech" },
+    { value: "slurred",   label: "Slurred" },
+    { value: "disturbed", label: "Disturbed" },
+  ];
+  const ENV_OPTS = [
+    { value: "bed",     label: "Bed" },
+    { value: "home",    label: "Home" },
+    { value: "car",     label: "Car" },
+    { value: "walking", label: "Walking" },
+    { value: "other",   label: "Other" },
   ];
 
-  // Flatten into satellites; assign each a column index + ring, and record per-category
-  // column runs for the donut wedges.
-  const SAT = [];
-  const CAT_RUNS = [];
-  (function () {
-    let col = 0;
-    RING_LAYOUT.forEach(function (c) {
-      const m = Math.max(c.inner.length, c.outer.length);
-      const start = col;
-      for (let j = 0; j < m; j++) {
-        if (c.inner[j]) SAT.push(Object.assign({ cat: c.cat, ring: "in",  col: col + j }, c.inner[j]));
-        if (c.outer[j]) SAT.push(Object.assign({ cat: c.cat, ring: "out", col: col + j }, c.outer[j]));
-      }
-      CAT_RUNS.push({ cat: c.cat, start: start, end: col + m - 1 });
-      col += m;
-    });
-    SAT.totalCols = col;
-  })();
-  const TOTAL_COLS = SAT.totalCols;
-  const R_INNER = 90, R_OUTER = 162;
-  // Display-category colours for the ring donut wedges + their satellites.
-  const CAT = {
-    speech:   { fill: "rgba(91,140,255,.20)", ink: "#5b8cff", label: "Speech" },
-    motor:    { fill: "rgba(251,191,36,.20)", ink: "#fbbf24", label: "Motor" },
-    location: { fill: "rgba(52,211,153,.20)", ink: "#34d399", label: "Location" },
-  };
+  // 3×3 grid config — single source of truth. Reading order is row-major; index 4 (centre)
+  // is the LOG/Done action (represented by null). Add a category later = one entry here.
+  const LOG_TILES = [
+    { id: "speech",      label: "Speech",      kind: "single", field: "speech",      opts: SPEECH_OPTS },
+    { id: "oral",        label: "Oral",        kind: "flags",  group: "oral" },
+    { id: "involuntary", label: "Involuntary", kind: "flags",  group: "involuntary" },
+    { id: "where",       label: "Where",       kind: "single", field: "environment", opts: ENV_OPTS },
+    null, // centre = LOG / Done
+    { id: "length",      label: "Length",      kind: "duration" },
+    { id: "triggers",    label: "Triggers",    kind: "triggers" },
+    { id: "when",        label: "When",        kind: "when" },
+    { id: "notes",       label: "Notes",       kind: "notes" },
+  ];
 
-  const ringWrap = document.getElementById("ringWrap");
-  const logBtn = document.getElementById("logBtn");
-  const logHint = document.getElementById("logHint");
   const toastEl = document.getElementById("toast");
-  const fitClock = document.getElementById("fitClock");
-  const ringCount = document.getElementById("ringCount");
+  const logGrid = document.getElementById("logGrid");
+  let currentFit = null;     // the fit being tagged (null = idle)
+  let logBtn = null;         // centre cube, assigned in renderGrid()
 
-  let currentFit = null;     // fit being tagged via radial menu
-  let dismissTimer = null;
-  const satEls = [];
+  // Display-category colour grouping (mirrors the old donut wedges).
+  const CUBE_CAT = { speech: "speech", oral: "motor", involuntary: "motor", where: "location" };
 
-  // build satellites once (inner + outer rings)
-  SAT.forEach(function (s, i) {
-    const angle = (-90 + s.col * (360 / TOTAL_COLS)) * Math.PI / 180;
-    const r = s.ring === "in" ? R_INNER : R_OUTER;
-    const x = Math.cos(angle) * r;
-    const y = Math.sin(angle) * r;
-    const el = document.createElement("button");
-    el.className = "satellite";
-    el.dataset.cat = s.cat;
-    el.dataset.ring = s.ring;
-    el.dataset.idx = i;
-    el.innerHTML = s.label;
-    el.style.setProperty("--x", x + "px");
-    el.style.setProperty("--y", y + "px");
-    el.addEventListener("click", function (ev) { ev.stopPropagation(); onSatellite(s); });
-    ringWrap.appendChild(el);
-    satEls.push(el);
-  });
-
-  // Labelled category donut wedges behind the ring (always visible).
-  buildRingPie();
-  function buildRingPie() {
-    const C = 210, R_IN = 52, R_OUT = 198, R_LBL = 206;
-    const step = 360 / TOTAL_COLS, half = step / 2, gap = 0;
-    const pol = function (r, deg) {
-      const a = deg * Math.PI / 180;
-      return [(C + r * Math.cos(a)).toFixed(2), (C + r * Math.sin(a)).toFixed(2)];
-    };
-    const donut = function (a0, a1) {
-      const oa = pol(R_OUT, a0), ob = pol(R_OUT, a1), ib = pol(R_IN, a1), ia = pol(R_IN, a0);
-      const large = (a1 - a0) > 180 ? 1 : 0;
-      return "M" + oa[0] + " " + oa[1] + "A" + R_OUT + " " + R_OUT + " 0 " + large + " 1 " + ob[0] + " " + ob[1] +
-        "L" + ib[0] + " " + ib[1] + "A" + R_IN + " " + R_IN + " 0 " + large + " 0 " + ia[0] + " " + ia[1] + "Z";
-    };
-    // Arc for the curved label; reversed on the lower half so text stays upright.
-    const labelArc = function (a0, a1) {
-      const mid = (a0 + a1) / 2, large = (a1 - a0) > 180 ? 1 : 0;
-      if (Math.sin(mid * Math.PI / 180) > 0.05) {
-        const p0 = pol(R_LBL, a1), p1 = pol(R_LBL, a0);
-        return "M" + p0[0] + " " + p0[1] + "A" + R_LBL + " " + R_LBL + " 0 " + large + " 0 " + p1[0] + " " + p1[1];
+  // ---- Build the grid shell (once) ----
+  function renderGrid() {
+    logGrid.innerHTML = "";
+    LOG_TILES.forEach(function (t) {
+      if (!t) {
+        logBtn = document.createElement("button");
+        logBtn.id = "logBtn";
+        logBtn.className = "cube cube-log";
+        logBtn.textContent = "LOG";
+        logBtn.addEventListener("click", onLogBtn);
+        logGrid.appendChild(logBtn);
+        return;
       }
-      const p0 = pol(R_LBL, a0), p1 = pol(R_LBL, a1);
-      return "M" + p0[0] + " " + p0[1] + "A" + R_LBL + " " + R_LBL + " 0 " + large + " 1 " + p1[0] + " " + p1[1];
-    };
-    // Category column runs (computed during the satellite flatten).
-    let paths = "", labels = "";
-    CAT_RUNS.forEach(function (r) {
-      const a0 = (-90 + r.start * step) - half + gap;
-      const a1 = (-90 + r.end * step) + half - gap;
-      const c = CAT[r.cat];
-      paths += '<path d="' + donut(a0, a1) + '" fill="' + c.fill + '"></path>';
-      labels += '<path id="rp-' + r.cat + '" d="' + labelArc(a0, a1) + '" fill="none"></path>' +
-        '<text fill="' + c.ink + '"><textPath href="#rp-' + r.cat + '" startOffset="50%" text-anchor="middle">' +
-        c.label.toUpperCase() + '</textPath></text>';
+      const cube = document.createElement("div");
+      cube.className = "cube";
+      cube.dataset.tile = t.id;
+      if (CUBE_CAT[t.id]) cube.dataset.cat = CUBE_CAT[t.id];
+      logGrid.appendChild(cube);
     });
-    ringWrap.insertAdjacentHTML("afterbegin",
-      '<svg class="ring-pie" viewBox="0 0 420 420" aria-hidden="true">' + paths + labels + '</svg>');
   }
 
-  function openRing() {
-    ringWrap.classList.add("open");
-    logBtn.classList.add("open");
-    logBtn.firstChild.nodeValue = "Done";
-    logHint.innerHTML = "";
-    satEls.forEach(function (el) {
-      el.style.transform = "translate(" + el.style.getPropertyValue("--x") + "," + el.style.getPropertyValue("--y") + ") scale(1)";
-    });
-    renderFitClock();
-    document.getElementById("openControls").hidden = false;
-    fitClock.classList.add("show");
-    ringCount.hidden = false;
-    if (currentFit) {
-      document.getElementById("ringCountVal").textContent = currentFit.count;
-      document.querySelector("#ringCount .rc-label").textContent =
-        isSymptom(currentFit) ? "Symptom episode — no fit" : "Number of fits";
-    }
-    fitOpenRing();
+  function onLogBtn() {
+    if (currentFit) deactivate();   // centre shows "Done"
+    else logNewFit();               // centre shows "LOG"
   }
-  function closeRing() {
-    ringWrap.classList.remove("open");
-    logBtn.classList.remove("open");
-    logBtn.firstChild.nodeValue = "LOG";
-    logHint.innerHTML = "";
-    satEls.forEach(function (el) { el.style.transform = "translate(0,0) scale(.4)"; });
+
+  function activate() {
+    logGrid.classList.remove("idle");
+    if (logBtn) { logBtn.classList.add("done"); logBtn.textContent = "Done"; }
+    renderCubes();
+  }
+  function deactivate() {
     currentFit = null;
-    document.getElementById("openControls").hidden = true;
-    fitClock.classList.remove("show");
-    ringCount.hidden = true;
-    clearTimeout(dismissTimer);
-    fitOpenRing();
+    closeNotes();
+    logGrid.classList.add("idle");
+    if (logBtn) { logBtn.classList.remove("done"); logBtn.textContent = "LOG"; }
   }
-  var lastControlsH = 96; // approx count-stepper height; refined from the live element when open
-  function fitOpenRing() {
-    var stage = document.querySelector(".log-stage");
-    if (!stage || !ringWrap) return;
-    var vv = window.visualViewport;
-    var stageRect = stage.getBoundingClientRect();
-    var rwTop = ringWrap.getBoundingClientRect().top; // below the time box when open
-    var visibleBottom = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
-    // Space from the top of the wheel down to the nav (or URL-bar-reduced bottom).
-    var avail = Math.min(stageRect.bottom, visibleBottom) - rwTop - 8;
-    var open = ringWrap.classList.contains("open");
-    var oc = document.getElementById("openControls");
-    // Reserve the same controls height whether open or closed so the wheel scale —
-    // and therefore the LOG/Done button centre — is identical in both states.
-    if (open && oc && !oc.hidden) lastControlsH = oc.getBoundingClientRect().height + 14;
-    var controlsH = lastControlsH;
-    var vw = vv ? vv.width : window.innerWidth;
-    var widthScale = (Math.min(window.innerWidth, vw) - 24) / 420;
-    var heightScale = (avail - controlsH) / 420;
-    var scale = Math.max(0.55, Math.min(1, heightScale, widthScale));
-    ringWrap.style.setProperty("--ring-scale", scale.toFixed(3));
-    ringWrap.style.marginBottom = Math.round(-420 * (1 - scale)) + "px";
-  }
-  window.addEventListener("resize", fitOpenRing);
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", fitOpenRing);
-    window.visualViewport.addEventListener("scroll", fitOpenRing);
-  }
-  function renderFitClock() {
-    if (!currentFit) return;
-    document.getElementById("fcTime").textContent = fmt24(currentFit.ts);
-    document.getElementById("fcDay").textContent = fmtDayHead(currentFit.ts);
-    document.getElementById("ringCountVal").textContent = fitCount(currentFit);
-  }
-  fitClock.addEventListener("click", function () {
-    if (!currentFit) return;
-    clearTimeout(dismissTimer);
+
+  // ---- Render each cube's tappable symptom chips from the current fit ----
+  function cubeInnerHtml(t) {
     const f = currentFit;
-    openTimePicker(f.ts, function (ts) {
-      f.ts = ts; f.updatedAt = Date.now();
-      persistFits(); markDirty(f.id); updateTodayCount();
-      renderFitClock();
+    if (t.kind === "when") {
+      return '<span class="cube-label">When</span>' +
+        '<button class="when-time" data-act="time">' + fmt24(f.ts) + '</button>' +
+        '<div class="when-count">' +
+          '<button data-act="cminus" aria-label="Fewer">&minus;</button>' +
+          '<b>' + f.count + '</b>' +
+          '<button data-act="cplus" aria-label="More">+</button></div>' +
+        (isSymptom(f) ? '<span class="when-sx">symptom</span>' : '');
+    }
+    if (t.kind === "notes") {
+      return '<span class="cube-label">Notes</span>' +
+        '<button class="notes-open ' + (f.notes ? "has" : "") + '" data-act="notes">' + (f.notes ? "✓ note" : "+ add") + '</button>';
+    }
+    let opts = "";
+    if (t.kind === "single") {
+      opts = t.opts.map(function (o) {
+        return '<button class="mini ' + (f[t.field] === o.value ? "on" : "") + '" data-act="single" data-val="' + o.value + '">' + o.label + '</button>';
+      }).join("");
+    } else if (t.kind === "flags") {
+      opts = MOTOR_FLAGS.filter(function (m) { return m.group === t.group; }).map(function (m) {
+        return '<button class="mini ' + (f[m.key] ? "on" : "") + '" data-act="flag" data-key="' + m.key + '">' + m.label + '</button>';
+      }).join("");
+    } else if (t.kind === "duration") {
+      const presets = isSymptom(f) ? LONG_DUR_PRESETS : DUR_PRESETS;
+      opts = presets.map(function (s) {
+        return '<button class="mini ' + (f.durationSeconds === s ? "on" : "") + '" data-act="dur" data-dur="' + s + '">' + fmtDuration(s) + '</button>';
+      }).join("");
+    } else if (t.kind === "triggers") {
+      opts = triggerVocab.map(function (tr) {
+        return '<button class="mini ' + (f.triggers.indexOf(tr) >= 0 ? "on" : "") + '" data-act="trig" data-trig="' + esc(tr) + '">' + esc(tr) + '</button>';
+      }).join("") + '<button class="mini add" data-act="trigadd">+ Add</button>';
+    }
+    return '<span class="cube-label">' + t.label + '</span><div class="cube-opts">' + opts + '</div>';
+  }
+
+  function renderCubes() {
+    if (!currentFit) return;
+    LOG_TILES.forEach(function (t) {
+      if (!t) return;
+      const cube = logGrid.querySelector('[data-tile="' + t.id + '"]');
+      if (!cube) return;
+      cube.innerHTML = cubeInnerHtml(t);
+      cube.querySelectorAll("[data-act]").forEach(function (b) {
+        b.addEventListener("click", function (ev) { ev.stopPropagation(); handleAct(t, b.dataset.act, b); });
+      });
     });
-  });
-  function setRingCount(n) {
+  }
+
+  function handleAct(t, act, b) {
+    const f = currentFit;
+    if (!f) return;
+    if (act === "time") { openTimePicker(f.ts, function (ts) { f.ts = ts; saveFit(); updateTodayCount(); renderCubes(); }); return; }
+    if (act === "notes") { openNotes(); return; }
+    if (act === "single") {
+      if (t.field === "environment") f.environment = (f.environment === b.dataset.val ? null : b.dataset.val);
+      else f[t.field] = b.dataset.val;
+    } else if (act === "flag") {
+      const k = b.dataset.key; f[k] = !f[k];
+    } else if (act === "dur") {
+      const s = +b.dataset.dur; f.durationSeconds = (f.durationSeconds === s ? null : s);
+    } else if (act === "trig") {
+      const tr = b.dataset.trig, i = f.triggers.indexOf(tr);
+      if (i >= 0) f.triggers.splice(i, 1); else f.triggers.push(tr);
+    } else if (act === "trigadd") {
+      const tr = (prompt("New trigger:") || "").trim();
+      if (!tr) return;
+      if (triggerVocab.indexOf(tr) < 0) { triggerVocab.push(tr); persistTriggers(); }
+      if (f.triggers.indexOf(tr) < 0) f.triggers.push(tr);
+    } else if (act === "cminus") {
+      f.count = Math.max(0, f.count - 1);
+    } else if (act === "cplus") {
+      f.count = f.count + 1;
+    }
+    saveFit(); updateTodayCount(); renderCubes();
+  }
+
+  // ---- Notes (the one field that still needs a sheet) ----
+  const tilePanel = document.getElementById("tilePanel");
+  const tilePanelBackdrop = document.getElementById("tilePanel-backdrop");
+  function openNotes() {
     if (!currentFit) return;
-    currentFit.count = Math.max(0, n);
+    tilePanel.innerHTML = '<div class="sheet-grab"></div><div class="tp-panel-head">Notes</div>' +
+      '<div class="field"><textarea id="tpNotes" placeholder="Anything else worth remembering…">' + esc(currentFit.notes || "") + '</textarea></div>' +
+      '<button class="btn ghost" id="tpDone">Done</button>';
+    tilePanel.querySelector("#tpNotes").addEventListener("input", function (e) { currentFit.notes = e.target.value; saveFit(); });
+    tilePanel.querySelector("#tpDone").addEventListener("click", closeNotes);
+    tilePanelBackdrop.classList.add("show");
+    tilePanel.classList.add("show");
+  }
+  function closeNotes() {
+    tilePanelBackdrop.classList.remove("show");
+    tilePanel.classList.remove("show");
+    if (currentFit) renderCubes();
+  }
+  tilePanelBackdrop.addEventListener("click", closeNotes);
+
+  function saveFit() {
+    if (!currentFit) return;
     currentFit.updatedAt = Date.now();
-    persistFits(); markDirty(currentFit.id); updateTodayCount();
-    document.getElementById("ringCountVal").textContent = currentFit.count;
-    document.querySelector("#ringCount .rc-label").textContent =
-      isSymptom(currentFit) ? "Symptom episode — no fit" : "Number of fits";
-    armDismiss();
+    persistFits(); markDirty(currentFit.id);
   }
-  document.getElementById("ringCountMinus").addEventListener("click", function (ev) {
-    ev.stopPropagation(); setRingCount((currentFit ? currentFit.count : 1) - 1);
-  });
-  document.getElementById("ringCountPlus").addEventListener("click", function (ev) {
-    ev.stopPropagation(); setRingCount((currentFit ? currentFit.count : 1) + 1);
-  });
-  function armDismiss() {
-    clearTimeout(dismissTimer);
-    dismissTimer = setTimeout(closeRing, 7000);
+
+  // ---- Default a new episode to the previous one's tags ----
+  function lastEpisodeBefore(cur) {
+    const list = active().filter(function (f) { return !cur || f.id !== cur.id; });
+    if (!list.length) return null;
+    return list.slice().sort(function (a, b) { return b.ts - a.ts; })[0];
   }
-  function refreshSatSelection() {
-    if (!currentFit) return;
-    satEls.forEach(function (el, i) {
-      const s = SAT[i];
-      let on = false;
-      if (s.group === "speech") on = currentFit.speech === s.value;
-      else if (s.group === "environment") on = currentFit.environment === s.value;
-      else on = currentFit[s.group] === true; // boolean Motor flag
-      el.classList.toggle("sel", on);
-    });
-  }
-  function onSatellite(s) {
-    if (!currentFit) return;
-    if (s.group === "speech") currentFit.speech = s.value;
-    else if (s.group === "environment") currentFit.environment = (currentFit.environment === s.value ? null : s.value);
-    else currentFit[s.group] = !currentFit[s.group]; // boolean Motor flag
-    currentFit.updatedAt = Date.now();
-    persistFits();
-    markDirty(currentFit.id);
-    refreshSatSelection();
-    armDismiss();
+  // Seed a freshly-created fit with the previous episode's tags so logging a
+  // recurring episode is a single tap (the user can override any cube after).
+  function inheritFromLast(fit) {
+    const prev = lastEpisodeBefore(fit);
+    if (!prev) return;
+    fit.speech = prev.speech;
+    MOTOR_FLAGS.forEach(function (m) { fit[m.key] = !!prev[m.key]; });
+    fit.environment = prev.environment;
+    fit.durationSeconds = prev.durationSeconds;
+    fit.triggers = (prev.triggers || []).slice();
+    saveFit();
   }
 
   function createFit(ts) {
     const fit = {
       id: uid(), ts: ts,
       lat: null, lng: null, acc: null,
-      speech: "normal", spitting: false, dribbling: false, arm: false, legs: false, mouthClick: false, mouthPop: false, environment: null,
+      speech: "normal", spitting: false, dribbling: false, mouthClick: false, mouthPop: false, laughing: false, arm: false, legs: false, head: false, environment: "home",
       durationSeconds: null, recoverySeconds: null, count: 1, triggers: [], notes: "",
       by: deviceName || null,
       updatedAt: Date.now(),
@@ -667,24 +601,14 @@
     return fit;
   }
 
-  function tagNewFit(fit, toastMsg) {
-    openRing();
-    refreshSatSelection();
-    armDismiss();
-    showToast(toastMsg);
+  function logNewFit() {
+    const fit = createFit(Date.now());  // sets currentFit
+    inheritFromLast(fit);               // default to last episode's tags
+    activate();
     updateTodayCount();
+    showToast("Logged " + fmt24(fit.ts));
     if (navigator.vibrate) navigator.vibrate(30);
   }
-
-  function logNewFit() {
-    const fit = createFit(Date.now());
-    tagNewFit(fit, "Logged " + fmt24(fit.ts));
-  }
-
-  logBtn.addEventListener("click", function () {
-    if (ringWrap.classList.contains("open")) { closeRing(); }
-    else { logNewFit(); }
-  });
 
   let toastTimer = null;
   function showToast(msg) {
@@ -732,7 +656,7 @@
     if (s === yday) return "Yesterday";
     return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
   }
-  const SPEECH_LBL = { normal: "Speech OK", slurred: "Slurred", apraxic: "Apraxic", none: "No speech" };
+  const SPEECH_LBL = { normal: "Speech OK", slurred: "Slurred", disturbed: "Disturbed", apraxic: "Disturbed", none: "No speech" };
   function fmtDuration(sec) {
     if (sec == null) return null;
     if (sec < 60) return sec + "s";
@@ -796,7 +720,7 @@
   const backdrop = document.getElementById("sheet-backdrop");
   const sheet = document.getElementById("sheet");
   const DUR_PRESETS = [10, 30, 60, 120, 300, 600];
-  const LONG_DUR_PRESETS = [600, 1200, 1800, 2700, 3600, 5400, 7200, 10800]; // 10m..3h
+  const LONG_DUR_PRESETS = [900, 1800, 3600, 7200, 10800, 18000, 28800, 43200]; // 15m,30m,1h,2h,3h,5h,8h,12h
   let editingId = null;
 
   function openEditor(id) {
@@ -827,16 +751,17 @@
     const trigChips = triggerVocab.map(function (t) {
       return '<button class="chip trig-chip ' + (f.triggers.indexOf(t) >= 0 ? "on" : "") + '" data-trig="' + esc(t) + '">' + esc(t) + '</button>';
     }).join("");
-    const speechChips = ["normal", "slurred", "apraxic", "none"].map(function (v) {
-      return '<button class="chip sp-chip ' + (f.speech === v ? "on" : "") + '" data-speech="' + v + '">' + SPEECH_LBL[v] + '</button>';
+    const speechChips = SPEECH_OPTS.map(function (o) {
+      return '<button class="chip sp-chip ' + (f.speech === o.value || (o.value === "disturbed" && f.speech === "apraxic") ? "on" : "") + '" data-speech="' + o.value + '">' + o.label + '</button>';
     }).join("");
-    const envChips = ["home", "car", "walking", "other"].map(function (v) {
-      return '<button class="chip env-chip ' + (f.environment === v ? "on" : "") + '" data-env="' + v + '">' + cap(v) + '</button>';
+    const envChips = ENV_OPTS.map(function (o) {
+      return '<button class="chip env-chip ' + (f.environment === o.value ? "on" : "") + '" data-env="' + o.value + '">' + o.label + '</button>';
     }).join("");
-    const motorRows = MOTOR_FLAGS.map(function (m) {
-      return '<div class="field"><label>' + m.label + '</label><div class="chips">' +
-        '<button class="chip motor-chip ' + (f[m.key] ? "on" : "") + '" data-motor="' + m.key + '">' + (f[m.key] ? "Yes" : "No") + '</button></div></div>';
-    }).join("");
+    function motorGroupChips(group) {
+      return MOTOR_FLAGS.filter(function (m) { return m.group === group; }).map(function (m) {
+        return '<button class="chip motor-chip ' + (f[m.key] ? "on" : "") + '" data-motor="' + m.key + '">' + m.label + '</button>';
+      }).join("");
+    }
     return '<div class="sheet-grab"></div>' +
       '<button class="editor-time" id="editTime">' + fmtDayHead(f.ts) + ' &middot; ' + fmt24(f.ts) + '<span class="edit-hint">&#9998; edit</span></button>' +
       '<div class="field"><label>' + (symptom ? "Number of fits — 0 = symptom episode (no fit)" : "Number of fits") + '</label><div class="stepper">' +
@@ -844,14 +769,15 @@
         '<b id="countVal">' + f.count + '</b>' +
         '<button class="step-btn" id="countPlus" aria-label="More">+</button></div></div>' +
       '<div class="field"><label>Speech</label><div class="chips">' + speechChips + '</div></div>' +
-      motorRows +
+      '<div class="field"><label>Oral</label><div class="chips">' + motorGroupChips("oral") + '</div></div>' +
+      '<div class="field"><label>Involuntary</label><div class="chips">' + motorGroupChips("involuntary") + '</div></div>' +
       '<div class="field"><label>Environment</label><div class="chips">' + envChips + '</div></div>' +
-      '<div class="field"><label>' + (symptom ? "How long symptoms lasted" : "Duration") + '</label><div class="chips">' + durChips +
+      '<div class="field"><label>' + (symptom ? "Symptom length" : "Duration") + '</label><div class="chips">' + durChips +
         '<button class="chip add" id="durCustom">Custom…</button></div></div>' +
       (symptom ? "" :
         '<div class="field"><label>Recovery (symptoms after fit)</label><div class="chips">' + recChips +
         '<button class="chip add" id="recClear">Clear</button></div></div>') +
-      '<div class="field"><label>Triggers</label><div class="chips">' + trigChips +
+      '<div class="field"><label>Suspected triggers</label><div class="chips">' + trigChips +
         '<button class="chip add" id="trigAdd">+ Add</button></div></div>' +
       '<div class="field"><label>Notes</label><textarea id="notesBox" placeholder="Anything else worth remembering…">' + esc(f.notes || "") + '</textarea></div>' +
       '<div class="btn-row"><button class="btn ghost" id="doneBtn">Done</button>' +
@@ -1010,7 +936,6 @@
     tpBackdrop.classList.remove("show");
     tpEl.classList.remove("show");
     tpConfirmCb = null;
-    if (ringWrap.classList.contains("open")) armDismiss();
   }
   tpBackdrop.addEventListener("click", closeTimePicker);
 
@@ -1095,7 +1020,7 @@
     const m = {};
     list.forEach(function (f) {
       MOTOR_FLAGS.forEach(function (mf) { if (f[mf.key]) m[mf.label] = (m[mf.label] || 0) + 1; });
-      if (f.speech === "apraxic") m["Apraxic"] = (m["Apraxic"] || 0) + 1;
+      if (f.speech === "disturbed" || f.speech === "apraxic") m["Disturbed"] = (m["Disturbed"] || 0) + 1;
     });
     return Object.keys(m).map(function (k) { return { label: k, value: m[k] }; }).sort(function (a, b) { return b.value - a.value; });
   }
@@ -1361,7 +1286,7 @@
     Object.keys(views).forEach(function (k) { views[k].classList.toggle("active", k === name); });
     if (name === "review") renderReview();
     if (name === "insights") renderInsights();
-    if (name === "log") { closeRing(); updateTodayCount(); refreshSyncStatus(); }
+    if (name === "log") { deactivate(); updateTodayCount(); refreshSyncStatus(); }
   }
   tabBtns.forEach(function (b) { b.addEventListener("click", function () { switchTab(b.dataset.tab); }); });
 
@@ -1377,9 +1302,28 @@
     }
   })();
 
+  // One-time terminology migration: apraxic → disturbed, "Strong emotion" → "Emotions".
+  (function migrateTerms() {
+    var fitsChanged = false, trigChanged = false;
+    fits.forEach(function (f) {
+      var touched = false;
+      if (f.speech === "apraxic") { f.speech = "disturbed"; touched = true; }
+      if (f.triggers && f.triggers.indexOf("Strong emotion") >= 0) {
+        f.triggers = f.triggers.map(function (t) { return t === "Strong emotion" ? "Emotions" : t; });
+        touched = true;
+      }
+      if (touched) { f.updatedAt = Date.now(); markDirty(f.id); fitsChanged = true; }
+    });
+    var vi = triggerVocab.indexOf("Strong emotion");
+    if (vi >= 0) { triggerVocab[vi] = "Emotions"; trigChanged = true; }
+    if (fitsChanged) persistFits();
+    if (trigChanged) persistTriggers();
+  })();
+
+  renderGrid();
+  deactivate();
   updateTodayCount();
   refreshSyncStatus();
-  fitOpenRing();
 
   function maybeSync() { if (spaceCode && navigator.onLine && !document.hidden) syncNow(); }
 
