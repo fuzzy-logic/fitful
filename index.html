@@ -616,7 +616,7 @@
     { value: "bed",     label: "Bed" },
     { value: "home",    label: "Home" },
     { value: "car",     label: "Car" },
-    { value: "walking", label: "Walking" },
+    { value: "outside", label: "Outside" },
     { value: "other",   label: "Other" },
   ];
 
@@ -2062,15 +2062,16 @@
     }
   })();
 
-  // One-time terminology migration: apraxic → disturbed, "Strong emotion" → "Emotions",
-  // "Tiredness" → "Tired". Trigger renames map both stored records and the vocab so old
-  // tags don't split from the renamed option in summaries/insights.
+  // One-time terminology migration: apraxic → disturbed, environment walking → outside,
+  // "Strong emotion" → "Emotions", "Tiredness" → "Tired". Trigger renames map both stored
+  // records and the vocab so old tags don't split from the renamed option in summaries/insights.
   (function migrateTerms() {
     var TRIG_RENAMES = { "Strong emotion": "Emotions", "Tiredness": "Tired" };
     var fitsChanged = false, trigChanged = false;
     fits.forEach(function (f) {
       var touched = false;
       if (f.speech === "apraxic") { f.speech = "disturbed"; touched = true; }
+      if (f.environment === "walking") { f.environment = "outside"; touched = true; }
       if (f.triggers) {
         var seen = {}, mapped = [];
         f.triggers.forEach(function (t) {
