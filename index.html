@@ -78,7 +78,7 @@
   .cube {
     border: 1.5px solid var(--line); background: var(--card); color: var(--text);
     border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-    gap: 6px; padding: 8px 6px; height: 106px; cursor: default; text-align: center; overflow: hidden;
+    gap: 4px; padding: 6px 6px; height: 140px; cursor: default; text-align: center; overflow: hidden;
     transition: border-color .2s, background .2s; position: relative;
   }
   /* Scroll signifier: when a cube's chips overflow and it isn't scrolled to the end,
@@ -99,14 +99,14 @@
   .cube[data-cat="involuntary"] { --cat: var(--cat-involuntary); }
   .cube[data-cat="where"]       { --cat: var(--cat-where); }
   .cube[data-cat="triggers"]    { --cat: var(--cat-triggers); }
-  .cube .cube-label { font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--cat, var(--muted)); flex: 0 0 auto; }
+  .cube .cube-label { font-size: 10px; font-weight: 800; letter-spacing: .3px; text-transform: uppercase; color: var(--cat, var(--muted)); flex: 0 0 auto; }
   /* Chip area scrolls inside the cube when a category has many options (e.g. Triggers),
      so every cube stays the same height and the 3×3 grid stays compact on small phones. */
-  .cube-opts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-content: flex-start; width: 100%; flex: 1 1 auto; overflow-y: auto; scrollbar-width: none; }
+  .cube-opts { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; align-content: flex-start; width: 100%; flex: 1 1 auto; overflow-y: auto; scrollbar-width: none; }
   .cube-opts::-webkit-scrollbar { display: none; }
   .mini {
     border: 1px solid var(--line); background: var(--bg2); color: var(--text);
-    border-radius: 10px; padding: 6px 9px; font-size: 15.75px; font-weight: 700; line-height: 1.05; cursor: pointer;
+    border-radius: 10px; padding: 4px 8px; font-size: 13px; font-weight: 700; line-height: 1.05; cursor: pointer;
   }
   .mini:active { transform: scale(.93); }
   .mini.add { border-style: dashed; color: var(--muted); }
