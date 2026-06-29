@@ -67,13 +67,24 @@
   .log-head { text-align: center; margin: 2px 0 4px; }
   .log-grid {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-    width: 100%; max-width: 460px; margin: 6px auto 0;
+    width: 100%; max-width: 460px; margin: 2px auto 0;
   }
   .cube {
     border: 1.5px solid var(--line); background: var(--card); color: var(--text);
     border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-    gap: 6px; padding: 8px 6px; height: 132px; cursor: default; text-align: center; overflow: hidden;
-    transition: border-color .2s, background .2s;
+    gap: 6px; padding: 8px 6px; height: 106px; cursor: default; text-align: center; overflow: hidden;
+    transition: border-color .2s, background .2s; position: relative;
+  }
+  /* Scroll signifier: when a cube's chips overflow and it isn't scrolled to the end,
+     a bottom fade + a small chevron hint that there's more below. Toggled via .more. */
+  .cube.more::before {
+    content: ""; position: absolute; left: 6px; right: 6px; bottom: 4px; height: 30px;
+    background: linear-gradient(180deg, transparent, var(--card)); pointer-events: none;
+    border-radius: 0 0 14px 14px;
+  }
+  .cube.more::after {
+    content: "\2304"; position: absolute; left: 0; right: 0; bottom: 1px; text-align: center;
+    font-size: 17px; line-height: 1; font-weight: 800; color: var(--muted); pointer-events: none;
   }
   .cube[data-tile="when"] { gap: 4px; }
   .cube .cube-label { font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); flex: 0 0 auto; }
@@ -94,12 +105,19 @@
   .cube[data-cat="speech"]   .mini.on { border-color: var(--speech); background: rgba(91,140,255,.22); color: #cfe0ff; }
   .cube[data-cat="motor"]    .mini.on { border-color: var(--spit);   background: rgba(251,191,36,.22); color: #ffe7b3; }
   .cube[data-cat="location"] .mini.on { border-color: var(--env);    background: rgba(52,211,153,.22); color: #b6f0d8; }
-  /* When cube (time + count) */
-  .when-time { border: 1px solid var(--line); background: var(--bg2); color: var(--text); border-radius: 10px; padding: 4px 12px; font-size: 19.5px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums; }
-  .when-count { display: flex; align-items: center; gap: 12px; }
-  .when-count button { width: 39px; height: 39px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--card); color: var(--text); font-size: 22.5px; font-weight: 700; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .when-count b { font-size: 22.5px; font-weight: 800; min-width: 21px; font-variant-numeric: tabular-nums; }
-  .when-sx { font-size: 14.25px; font-weight: 800; color: var(--spit); text-transform: uppercase; letter-spacing: .4px; }
+  /* When cube (time only — count moved below the grid) */
+  .when-time { border: 1px solid var(--line); background: var(--bg2); color: var(--text); border-radius: 10px; padding: 8px 14px; font-size: 22px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  /* Fit-count stepper below the grid */
+  .log-count { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; width: 100%; max-width: 460px; margin: 10px auto 0; text-align: center; }
+  .log-count[hidden] { display: none; }
+  .log-count .lc-label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); }
+  .log-count .lc-step { display: flex; align-items: center; justify-content: center; gap: 16px; }
+  .log-count button { width: 42px; height: 42px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--card); color: var(--text); font-size: 24px; font-weight: 700; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .log-count button:active { transform: scale(.93); }
+  .log-count b { font-size: 28px; font-weight: 800; min-width: 28px; text-align: center; font-variant-numeric: tabular-nums; }
+  .log-count .lc-sx { font-size: 12px; font-weight: 800; color: var(--spit); text-transform: uppercase; letter-spacing: .4px; }
+  .log-count:not(.symptom) .lc-sx { color: var(--muted); opacity: .7; }
+  .log-count.symptom b { color: var(--spit); }
   /* Notes cube */
   .notes-open { border: 1px dashed var(--line); background: transparent; color: var(--muted); border-radius: 10px; padding: 7px 15px; font-size: 16.5px; font-weight: 700; cursor: pointer; }
   .notes-open.has { border-style: solid; border-color: var(--accent); color: #cfe0ff; }
@@ -133,6 +151,8 @@
   .pill { background: var(--bg2); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 600; }
   .pill.speech { color: var(--speech); } .pill.motor { color: var(--spit); } .pill.env { color: var(--env); }
   .pill.dur { color: var(--text); } .pill.trig { color: var(--warn); }
+  .pill.wx { color: var(--text); }
+  .wx-line { font-size: 14px; color: var(--text); padding: 4px 0; }
   .fit-row .chev { margin-left: auto; color: var(--muted); font-size: 20px; }
   .day-head { color: var(--muted); font-size: 13px; font-weight: 700; margin: 18px 0 8px; }
   .empty { color: var(--muted); text-align: center; margin-top: 40px; font-size: 15px; line-height: 1.5; }
@@ -156,7 +176,8 @@
     border-radius: 999px; padding: 9px 14px; font-size: 14px; font-weight: 600; cursor: pointer;
   }
   .chip.on { border-color: var(--accent); background: rgba(91,140,255,.15); color: #cfe0ff; }
-  .chip.add { border-style: dashed; color: var(--muted); }
+  .chip.add { border-style: dashed; border-color: var(--accent); color: var(--accent); }
+  .chip .chip-x { margin-left: 7px; font-weight: 800; opacity: .75; }
   textarea {
     width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px;
     color: var(--text); padding: 12px; font: inherit; resize: vertical; min-height: 64px;
@@ -280,6 +301,15 @@
         <div class="sync-status" id="syncStatus"></div>
       </div>
       <div class="log-grid idle" id="logGrid"></div>
+      <div class="log-count" id="logCount" hidden>
+        <span class="lc-label">Fits</span>
+        <div class="lc-step">
+          <button id="logCountMinus" aria-label="Fewer">&minus;</button>
+          <b id="logCountVal">1</b>
+          <button id="logCountPlus" aria-label="More">+</button>
+        </div>
+        <span class="lc-sx">0 = symptom</span>
+      </div>
     </div>
   </section>
 
@@ -372,10 +402,150 @@
         fit.updatedAt = Date.now();
         persistFits();
         markDirty(fit.id);
+        applyWeather(fit);
       },
       function () { /* denied or unavailable — fit still valid */ },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
+  }
+
+  // ---------------- Weather (Open-Meteo, keyless) ----------------
+  // WMO weather interpretation codes → short label + emoji. Stored canonical: tempC (°C).
+  const WEATHER_CODES = {
+    0: ["Clear", "☀️"], 1: ["Mainly clear", "🌤️"], 2: ["Partly cloudy", "⛅"], 3: ["Overcast", "☁️"],
+    45: ["Fog", "🌫️"], 48: ["Rime fog", "🌫️"],
+    51: ["Light drizzle", "🌦️"], 53: ["Drizzle", "🌦️"], 55: ["Dense drizzle", "🌧️"],
+    56: ["Freezing drizzle", "🌧️"], 57: ["Freezing drizzle", "🌧️"],
+    61: ["Light rain", "🌦️"], 63: ["Rain", "🌧️"], 65: ["Heavy rain", "🌧️"],
+    66: ["Freezing rain", "🌧️"], 67: ["Freezing rain", "🌧️"],
+    71: ["Light snow", "🌨️"], 73: ["Snow", "🌨️"], 75: ["Heavy snow", "❄️"], 77: ["Snow grains", "🌨️"],
+    80: ["Showers", "🌦️"], 81: ["Showers", "🌧️"], 82: ["Violent showers", "⛈️"],
+    85: ["Snow showers", "🌨️"], 86: ["Snow showers", "❄️"],
+    95: ["Thunderstorm", "⛈️"], 96: ["Thunderstorm + hail", "⛈️"], 99: ["Thunderstorm + hail", "⛈️"],
+  };
+  function weatherLabel(code) { const w = WEATHER_CODES[code]; return w ? w[0] : "Weather"; }
+  function weatherEmoji(code) { const w = WEATHER_CODES[code]; return w ? w[1] : "🌡️"; }
+  function fmtTemp(c) { return c == null ? null : Math.round(c) + "°C"; }
+  function hasWeather(f) { return f && f.tempC != null; }
+
+  // Cache by rounded location (~1km) for ~10 min so rapid logs reuse one network call.
+  const weatherCache = {};
+  function fetchWeather(lat, lng) {
+    const key = lat.toFixed(2) + "," + lng.toFixed(2);
+    const now = Date.now();
+    const hit = weatherCache[key];
+    if (hit && now - hit.at < 600000) return Promise.resolve(hit.data);
+    const url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat.toFixed(4) +
+      "&longitude=" + lng.toFixed(4) +
+      "&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code";
+    return fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !j.current) return null;
+      const c = j.current;
+      const data = {
+        tempC: c.temperature_2m == null ? null : +(+c.temperature_2m).toFixed(1),
+        apparentC: c.apparent_temperature == null ? null : +(+c.apparent_temperature).toFixed(1),
+        humidity: c.relative_humidity_2m == null ? null : Math.round(c.relative_humidity_2m),
+        weatherCode: c.weather_code == null ? null : c.weather_code,
+      };
+      weatherCache[key] = { at: now, data: data };
+      return data;
+    }).catch(function () { return null; });
+  }
+  function applyWeather(fit) {
+    if (fit.lat == null || fit.lng == null || hasWeather(fit)) return;
+    fetchWeather(fit.lat, fit.lng).then(function (w) {
+      if (!w || w.tempC == null) return;
+      fit.tempC = w.tempC; fit.apparentC = w.apparentC; fit.humidity = w.humidity; fit.weatherCode = w.weatherCode;
+      fit.updatedAt = Date.now();
+      persistFits();
+      markDirty(fit.id);
+      if (editingId === fit.id) openEditor(fit.id);
+      if (views.review && views.review.classList.contains("active")) renderReview();
+    });
+  }
+
+  // Historical weather for backfill. Open-Meteo: archive API (>~5 days old) or forecast
+  // past_days (recent). Cached per rounded-location + date so one call serves many records.
+  function localDateStr(ts) {
+    const d = new Date(ts), p = function (n) { return n < 10 ? "0" + n : "" + n; };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+  }
+  function localHourKey(ts) {
+    const d = new Date(ts), p = function (n) { return n < 10 ? "0" + n : "" + n; };
+    return localDateStr(ts) + "T" + p(d.getHours());
+  }
+  const histCache = {};
+  function fetchHistWeather(lat, lng, ts) {
+    const date = localDateStr(ts);
+    const key = lat.toFixed(2) + "," + lng.toFixed(2) + "," + date;
+    if (histCache[key] !== undefined) return Promise.resolve(histCache[key]);
+    const ageDays = (Date.now() - ts) / 86400000;
+    const hourly = "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code";
+    let url;
+    if (ageDays < 6) {
+      const past = Math.min(92, Math.max(1, Math.ceil(ageDays) + 1));
+      url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat.toFixed(4) + "&longitude=" + lng.toFixed(4) +
+        "&hourly=" + hourly + "&past_days=" + past + "&forecast_days=1&timezone=auto";
+    } else {
+      url = "https://archive-api.open-meteo.com/v1/archive?latitude=" + lat.toFixed(4) + "&longitude=" + lng.toFixed(4) +
+        "&start_date=" + date + "&end_date=" + date + "&hourly=" + hourly + "&timezone=auto";
+    }
+    return fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      const data = (j && j.hourly && j.hourly.time) ? j.hourly : null;
+      histCache[key] = data;
+      return data;
+    }).catch(function () { histCache[key] = null; return null; });
+  }
+  function pickHour(hourly, ts) {
+    if (!hourly || !hourly.time) return null;
+    const want = localHourKey(ts);
+    let idx = hourly.time.findIndex(function (t) { return t.slice(0, 13) === want; });
+    if (idx < 0) {
+      const dstr = localDateStr(ts);
+      idx = hourly.time.findIndex(function (t) { return t.slice(0, 10) === dstr; });
+    }
+    if (idx < 0) return null;
+    const t = hourly.temperature_2m ? hourly.temperature_2m[idx] : null;
+    if (t == null) return null;
+    const ap = hourly.apparent_temperature, hu = hourly.relative_humidity_2m, wc = hourly.weather_code;
+    return {
+      tempC: +(+t).toFixed(1),
+      apparentC: ap && ap[idx] != null ? +(+ap[idx]).toFixed(1) : null,
+      humidity: hu && hu[idx] != null ? Math.round(hu[idx]) : null,
+      weatherCode: wc && wc[idx] != null ? wc[idx] : null,
+    };
+  }
+  let backfilling = false;
+  function backfillWeather() {
+    if (backfilling) return;
+    const todo = active().filter(function (f) { return f.lat != null && f.lng != null && !hasWeather(f); });
+    const btn = document.getElementById("backfillBtn");
+    if (!todo.length) { if (btn) btn.textContent = "Weather up to date"; return; }
+    backfilling = true;
+    let done = 0, filled = 0;
+    function setLabel() { if (btn) { btn.disabled = true; btn.textContent = "Backfilling… " + done + "/" + todo.length; } }
+    setLabel();
+    function step(i) {
+      if (i >= todo.length) {
+        backfilling = false;
+        persistFits();
+        if (btn) { btn.disabled = false; btn.textContent = "Backfilled " + filled + " record" + (filled === 1 ? "" : "s"); }
+        if (views.review && views.review.classList.contains("active")) renderReview();
+        return;
+      }
+      const f = todo[i];
+      fetchHistWeather(f.lat, f.lng, f.ts).then(function (hourly) {
+        const w = pickHour(hourly, f.ts);
+        if (w && w.tempC != null) {
+          f.tempC = w.tempC; f.apparentC = w.apparentC; f.humidity = w.humidity; f.weatherCode = w.weatherCode;
+          f.updatedAt = Date.now(); markDirty(f.id); filled++;
+          if (filled % 5 === 0) persistFits();
+        }
+        done++; setLabel();
+        setTimeout(function () { step(i + 1); }, 120);
+      });
+    }
+    step(0);
   }
 
   // ---------------- Log screen (3×3 cube grid) ----------------
@@ -395,8 +565,8 @@
   // Single-select option lists, shared by the grid tile panels AND the editor chip rows
   // so the two never drift. Order = display order.
   const SPEECH_OPTS = [
-    { value: "normal",    label: "Speech OK" },
-    { value: "none",      label: "No speech" },
+    { value: "normal",    label: "OK" },
+    { value: "none",      label: "None" },
     { value: "slurred",   label: "Slurred" },
     { value: "disturbed", label: "Disturbed" },
   ];
@@ -430,6 +600,41 @@
   // Display-category colour grouping (mirrors the old donut wedges).
   const CUBE_CAT = { speech: "speech", oral: "motor", involuntary: "motor", where: "location" };
 
+  // ---- Usage ranking (cached) ----
+  // Each cube shows its most-used option first. We DON'T scan records on every LOG
+  // press — instead the counts are computed once and cached (in memory + localStorage).
+  // A little staleness is fine: we refresh lazily on load and after each log session.
+  const USAGE_KEY = "fitful.usage";
+  // Recency-weighted ranking: every log counts, but its weight halves every 3 days, so
+  // recently-used tags rise to the top while old history (e.g. a long run of "OK" speech)
+  // fades — with no empty-window reset on quiet days. Anchored to each event's time.
+  const USAGE_HALFLIFE_MS = 3 * 86400000;
+  let usageRank = load(USAGE_KEY, null);
+  function computeUsageRank() {
+    const r = { speech: {}, motor: {}, environment: {}, triggers: {} };
+    const now = Date.now();
+    active().forEach(function (f) {
+      const recency = Math.pow(0.5, Math.max(0, now - f.ts) / USAGE_HALFLIFE_MS);
+      const w = (fitCount(f) || 1) * recency;
+      if (f.speech) r.speech[f.speech] = (r.speech[f.speech] || 0) + w;
+      MOTOR_FLAGS.forEach(function (m) { if (f[m.key]) r.motor[m.key] = (r.motor[m.key] || 0) + w; });
+      if (f.environment) r.environment[f.environment] = (r.environment[f.environment] || 0) + w;
+      (f.triggers || []).forEach(function (t) { r.triggers[t] = (r.triggers[t] || 0) + w; });
+    });
+    return r;
+  }
+  function refreshUsage() { usageRank = computeUsageRank(); save(USAGE_KEY, usageRank); }
+  // Stable sort a copy of `items` by cached usage of `keyOf(item)` within `group`, desc.
+  // Ties keep their original (config) order so the layout stays predictable.
+  function byUsage(items, group, keyOf) {
+    if (!usageRank || !usageRank[group]) return items.slice();
+    const counts = usageRank[group];
+    return items
+      .map(function (it, i) { return { it: it, i: i, n: counts[keyOf(it)] || 0 }; })
+      .sort(function (a, b) { return b.n - a.n || a.i - b.i; })
+      .map(function (x) { return x.it; });
+  }
+
   // ---- Build the grid shell (once) ----
   function renderGrid() {
     logGrid.innerHTML = "";
@@ -460,25 +665,44 @@
     logGrid.classList.remove("idle");
     if (logBtn) { logBtn.classList.add("done"); logBtn.textContent = "Done"; }
     renderCubes();
+    renderCount();
   }
   function deactivate() {
+    const hadSession = !!currentFit;
     currentFit = null;
     closeNotes();
     logGrid.classList.add("idle");
     if (logBtn) { logBtn.classList.remove("done"); logBtn.textContent = "LOG"; }
+    renderCount();
+    // Refresh the cached usage ranking after a real log session (never on LOG press).
+    if (hadSession) refreshUsage();
   }
+
+  // ---- Fit-count stepper (below the grid; 0 = symptom episode) ----
+  const logCount = document.getElementById("logCount");
+  function renderCount() {
+    if (!currentFit) { logCount.hidden = true; return; }
+    logCount.hidden = false;
+    document.getElementById("logCountVal").textContent = currentFit.count;
+    logCount.classList.toggle("symptom", isSymptom(currentFit));
+  }
+  function changeCount(delta) {
+    if (!currentFit) return;
+    currentFit.count = Math.max(0, currentFit.count + delta);
+    saveFit();
+    updateTodayCount();
+    renderCubes();   // duration presets depend on isSymptom (count 0)
+    renderCount();
+  }
+  document.getElementById("logCountMinus").addEventListener("click", function () { changeCount(-1); });
+  document.getElementById("logCountPlus").addEventListener("click", function () { changeCount(1); });
 
   // ---- Render each cube's tappable symptom chips from the current fit ----
   function cubeInnerHtml(t) {
     const f = currentFit;
     if (t.kind === "when") {
       return '<span class="cube-label">When</span>' +
-        '<button class="when-time" data-act="time">' + fmt24(f.ts) + '</button>' +
-        '<div class="when-count">' +
-          '<button data-act="cminus" aria-label="Fewer">&minus;</button>' +
-          '<b>' + f.count + '</b>' +
-          '<button data-act="cplus" aria-label="More">+</button></div>' +
-        (isSymptom(f) ? '<span class="when-sx">symptom</span>' : '');
+        '<button class="when-time" data-act="time">' + fmt24(f.ts) + '</button>';
     }
     if (t.kind === "notes") {
       return '<span class="cube-label">Notes</span>' +
@@ -486,11 +710,13 @@
     }
     let opts = "";
     if (t.kind === "single") {
-      opts = t.opts.map(function (o) {
+      // Most-used option first (cached); duration stays in numeric order below.
+      opts = byUsage(t.opts, t.field, function (o) { return o.value; }).map(function (o) {
         return '<button class="mini ' + (f[t.field] === o.value ? "on" : "") + '" data-act="single" data-val="' + o.value + '">' + o.label + '</button>';
       }).join("");
     } else if (t.kind === "flags") {
-      opts = MOTOR_FLAGS.filter(function (m) { return m.group === t.group; }).map(function (m) {
+      const group = MOTOR_FLAGS.filter(function (m) { return m.group === t.group; });
+      opts = byUsage(group, "motor", function (m) { return m.key; }).map(function (m) {
         return '<button class="mini ' + (f[m.key] ? "on" : "") + '" data-act="flag" data-key="' + m.key + '">' + m.label + '</button>';
       }).join("");
     } else if (t.kind === "duration") {
@@ -499,11 +725,20 @@
         return '<button class="mini ' + (f.durationSeconds === s ? "on" : "") + '" data-act="dur" data-dur="' + s + '">' + fmtDuration(s) + '</button>';
       }).join("");
     } else if (t.kind === "triggers") {
-      opts = triggerVocab.map(function (tr) {
+      opts = byUsage(triggerVocab, "triggers", function (tr) { return tr; }).map(function (tr) {
         return '<button class="mini ' + (f.triggers.indexOf(tr) >= 0 ? "on" : "") + '" data-act="trig" data-trig="' + esc(tr) + '">' + esc(tr) + '</button>';
       }).join("") + '<button class="mini add" data-act="trigadd">+ Add</button>';
     }
     return '<span class="cube-label">' + t.label + '</span><div class="cube-opts">' + opts + '</div>';
+  }
+
+  // Show the fade+chevron cue only when chips overflow and we're not at the bottom.
+  function updateScrollCue(cube) {
+    const opts = cube.querySelector(".cube-opts");
+    if (!opts) { cube.classList.remove("more"); return; }
+    const more = opts.scrollHeight - opts.clientHeight > 2 &&
+      opts.scrollTop + opts.clientHeight < opts.scrollHeight - 2;
+    cube.classList.toggle("more", more);
   }
 
   function renderCubes() {
@@ -515,6 +750,18 @@
       cube.innerHTML = cubeInnerHtml(t);
       cube.querySelectorAll("[data-act]").forEach(function (b) {
         b.addEventListener("click", function (ev) { ev.stopPropagation(); handleAct(t, b.dataset.act, b); });
+      });
+      const opts = cube.querySelector(".cube-opts");
+      if (opts) opts.addEventListener("scroll", function () { updateScrollCue(cube); });
+      updateScrollCue(cube);   // synchronous: grid is laid out, scrollHeight is accurate
+    });
+    // A rAF pass refines the measurement once fonts/layout fully settle (no-op if it
+    // matches). Synchronous pass above guarantees the cue even if rAF is throttled.
+    requestAnimationFrame(function () {
+      LOG_TILES.forEach(function (t) {
+        if (!t) return;
+        const cube = logGrid.querySelector('[data-tile="' + t.id + '"]');
+        if (cube) updateScrollCue(cube);
       });
     });
   }
@@ -539,10 +786,6 @@
       if (!tr) return;
       if (triggerVocab.indexOf(tr) < 0) { triggerVocab.push(tr); persistTriggers(); }
       if (f.triggers.indexOf(tr) < 0) f.triggers.push(tr);
-    } else if (act === "cminus") {
-      f.count = Math.max(0, f.count - 1);
-    } else if (act === "cplus") {
-      f.count = f.count + 1;
     }
     saveFit(); updateTodayCount(); renderCubes();
   }
@@ -596,6 +839,7 @@
     const fit = {
       id: uid(), ts: ts,
       lat: null, lng: null, acc: null,
+      tempC: null, apparentC: null, humidity: null, weatherCode: null,
       speech: "normal", spitting: false, dribbling: false, mouthClick: false, mouthPop: false, laughing: false, arm: false, legs: false, head: false, environment: "home",
       durationSeconds: null, recoverySeconds: null, count: 1, triggers: [], notes: "",
       by: deviceName || null,
@@ -664,7 +908,7 @@
     if (s === yday) return "Yesterday";
     return d.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
   }
-  const SPEECH_LBL = { normal: "Speech OK", slurred: "Slurred", disturbed: "Disturbed", apraxic: "Disturbed", none: "No speech" };
+  const SPEECH_LBL = { normal: "OK", slurred: "Slurred", disturbed: "Disturbed", apraxic: "Disturbed", none: "None" };
   function fmtDuration(sec) {
     if (sec == null) return null;
     if (sec < 60) return sec + "s";
@@ -714,6 +958,7 @@
     if (!symptom && f.recoverySeconds != null) pills.push('<span class="pill dur">recovery ' + fmtDuration(f.recoverySeconds) + '</span>');
     if (f.triggers && f.triggers.length) pills.push('<span class="pill trig">' + f.triggers.length + ' trigger' + (f.triggers.length > 1 ? "s" : "") + '</span>');
     if (f.lat != null) pills.push('<span class="pill">GPS</span>');
+    if (hasWeather(f)) pills.push('<span class="pill wx">' + weatherEmoji(f.weatherCode) + ' ' + fmtTemp(f.tempC) + '</span>');
     if (f.by) pills.push('<span class="pill by">by ' + esc(f.by) + '</span>');
     const badge = symptom
       ? '<span class="count-badge symptom">Symptom</span>'
@@ -753,6 +998,11 @@
     const durChips = durPresets.map(function (s) {
       return '<button class="chip dur-chip ' + (f.durationSeconds === s ? "on" : "") + '" data-dur="' + s + '">' + fmtDuration(s) + '</button>';
     }).join("");
+    // Custom (non-preset) duration → show a removable pill so it's visible.
+    const durIsCustom = f.durationSeconds != null && durPresets.indexOf(f.durationSeconds) < 0;
+    const customDurChip = durIsCustom
+      ? '<button class="chip dur-custom-chip on" id="durCustomChip" title="Remove custom duration">' + fmtDuration(f.durationSeconds) + '<span class="chip-x">&times;</span></button>'
+      : "";
     const recChips = LONG_DUR_PRESETS.map(function (s) {
       return '<button class="chip rec-chip ' + (f.recoverySeconds === s ? "on" : "") + '" data-rec="' + s + '">' + fmtDuration(s) + '</button>';
     }).join("");
@@ -780,7 +1030,7 @@
       '<div class="field"><label>Oral</label><div class="chips">' + motorGroupChips("oral") + '</div></div>' +
       '<div class="field"><label>Involuntary</label><div class="chips">' + motorGroupChips("involuntary") + '</div></div>' +
       '<div class="field"><label>Environment</label><div class="chips">' + envChips + '</div></div>' +
-      '<div class="field"><label>' + (symptom ? "Symptom length" : "Duration") + '</label><div class="chips">' + durChips +
+      '<div class="field"><label>' + (symptom ? "Symptom length" : "Duration") + '</label><div class="chips">' + durChips + customDurChip +
         '<button class="chip add" id="durCustom">Custom…</button></div></div>' +
       (symptom ? "" :
         '<div class="field"><label>Recovery (symptoms after fit)</label><div class="chips">' + recChips +
@@ -788,6 +1038,12 @@
       '<div class="field"><label>Suspected triggers</label><div class="chips">' + trigChips +
         '<button class="chip add" id="trigAdd">+ Add</button></div></div>' +
       '<div class="field"><label>Notes</label><textarea id="notesBox" placeholder="Anything else worth remembering…">' + esc(f.notes || "") + '</textarea></div>' +
+      (hasWeather(f)
+        ? '<div class="field"><label>Weather</label><div class="wx-line">' + weatherEmoji(f.weatherCode) + ' ' +
+            esc(weatherLabel(f.weatherCode)) + ' &middot; ' + fmtTemp(f.tempC) +
+            (f.apparentC != null ? ' (feels ' + fmtTemp(f.apparentC) + ')' : '') +
+            (f.humidity != null ? ' &middot; ' + f.humidity + '% humidity' : '') + '</div></div>'
+        : "") +
       '<div class="btn-row"><button class="btn ghost" id="doneBtn">Done</button>' +
       '<button class="btn danger" id="delBtn" style="flex:0 0 auto">Delete</button></div>';
   }
@@ -815,6 +1071,8 @@
       const v = prompt("Duration in seconds:", f.durationSeconds || "");
       if (v !== null && v !== "" && !isNaN(+v)) { f.durationSeconds = Math.max(0, Math.round(+v)); touch(f); reopen(f); }
     });
+    const durCustomChip = sheet.querySelector("#durCustomChip");
+    if (durCustomChip) durCustomChip.addEventListener("click", function () { f.durationSeconds = null; touch(f); reopen(f); });
     sheet.querySelectorAll(".rec-chip").forEach(function (b) {
       b.addEventListener("click", function () { const s = +b.dataset.rec; f.recoverySeconds = (f.recoverySeconds === s ? null : s); touch(f); reopen(f); });
     });
@@ -1047,11 +1305,16 @@
     html += '<div class="chart-card"><div class="title">Triggers</div><div class="sub">Share of fits tagged with each trigger</div>' + hbars(countBy(function (f) { return f.triggers; }, fitsList), "No triggers tagged yet — add them in Review.", totalFitsAll) + '</div>';
     html += '<div class="chart-card"><div class="title">Environment</div><div class="sub">Share of fits in each environment</div>' + hbars(countBy(function (f) { return f.environment ? [cap(f.environment)] : []; }, fitsList), "No environment tagged yet.", totalFitsAll) + '</div>';
 
+    const needWeather = active().filter(function (f) { return f.lat != null && f.lng != null && !hasWeather(f); }).length;
     html += '<h2>Export &amp; backup</h2><div class="card">' +
       '<div class="btn-row" style="margin-bottom:10px"><button class="btn" id="shareBtn">Share</button>' +
       '<button class="btn ghost" id="copyBtn">Copy text</button></div>' +
       '<div class="btn-row"><button class="btn ghost" id="csvBtn">CSV</button>' +
-      '<button class="btn ghost" id="jsonBtn">JSON</button></div></div>';
+      '<button class="btn ghost" id="jsonBtn">JSON</button></div>' +
+      (needWeather
+        ? '<div class="btn-row" style="margin-top:10px"><button class="btn ghost" id="backfillBtn">Backfill weather (' + needWeather + ')</button></div>'
+        : "") +
+      '</div>';
 
     body.innerHTML = html;
     document.getElementById("outlierToggle").addEventListener("click", function () {
@@ -1063,6 +1326,8 @@
     document.getElementById("copyBtn").addEventListener("click", doCopy);
     document.getElementById("csvBtn").addEventListener("click", function () { downloadFile(buildCSV(), "fitful.csv", "text/csv"); });
     document.getElementById("jsonBtn").addEventListener("click", function () { downloadFile(JSON.stringify(active(), null, 2), "fitful.json", "application/json"); });
+    const backfillBtn = document.getElementById("backfillBtn");
+    if (backfillBtn) backfillBtn.addEventListener("click", backfillWeather);
   }
 
   function countBy(extractFn, list) {
@@ -1151,6 +1416,8 @@
       if (f.durationSeconds != null) parts.push(fmtDuration(f.durationSeconds));
       if (!symptom && f.recoverySeconds != null) parts.push("recovery " + fmtDuration(f.recoverySeconds));
       if (f.triggers.length) parts.push("triggers: " + f.triggers.join(", "));
+      if (hasWeather(f)) parts.push(weatherLabel(f.weatherCode) + " " + fmtTemp(f.tempC) +
+        (f.apparentC != null ? " (feels " + fmtTemp(f.apparentC) + ")" : ""));
       if (f.by) parts.push("by " + f.by);
       if (f.notes) parts.push('"' + f.notes + '"');
       out += "  " + parts.join(" | ") + "\n";
@@ -1160,7 +1427,7 @@
   function buildCSV() {
     const head = ["timestamp", "date", "time", "type", "count", "speech"]
       .concat(MOTOR_FLAGS.map(function (m) { return m.csv; }))
-      .concat(["environment", "duration_seconds", "recovery_seconds", "triggers", "logged_by", "lat", "lng", "accuracy_m", "notes"]);
+      .concat(["environment", "duration_seconds", "recovery_seconds", "triggers", "logged_by", "lat", "lng", "accuracy_m", "temp_c", "apparent_c", "humidity_pct", "weather", "notes"]);
     const rows = active().slice().sort(function (a, b) { return a.ts - b.ts; }).map(function (f) {
       const d = new Date(f.ts);
       return [
@@ -1169,7 +1436,10 @@
         f.environment || "", f.durationSeconds == null ? "" : f.durationSeconds,
         f.recoverySeconds == null ? "" : f.recoverySeconds,
         f.triggers.join("; "), f.by || "", f.lat == null ? "" : f.lat, f.lng == null ? "" : f.lng,
-        f.acc == null ? "" : f.acc, f.notes || ""
+        f.acc == null ? "" : f.acc,
+        f.tempC == null ? "" : f.tempC, f.apparentC == null ? "" : f.apparentC,
+        f.humidity == null ? "" : f.humidity, f.weatherCode == null ? "" : weatherLabel(f.weatherCode),
+        f.notes || ""
       ]).map(csvCell).join(",");
     });
     return head.join(",") + "\n" + rows.join("\n");
@@ -1413,6 +1683,9 @@
   deactivate();
   updateTodayCount();
   refreshSyncStatus();
+  // First render uses the cached ranking (instant); freshen it shortly after load
+  // so it reflects current local data without blocking startup or the LOG press.
+  if (!usageRank) refreshUsage(); else setTimeout(refreshUsage, 1500);
 
   function maybeSync() { if (spaceCode && navigator.onLine && !document.hidden) syncNow(); }
 
