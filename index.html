@@ -20,10 +20,16 @@
     --accent2: #34d399;
     --warn: #fbbf24;
     --danger: #f87171;
-    --speech: #5b8cff;
-    --spit: #fbbf24;
-    --env: #34d399;
-    --arm: #c084fc;
+    /* One hue per logging category — used identically wherever the category appears
+       (cube label, selected chip, review pill). Set --cat per data-cat below so the
+       contexts can never drift; adding a category = one token + one data-cat map. */
+    --cat-speech: #5b8cff;
+    --cat-oral: #fbbf24;
+    --cat-involuntary: #c084fc;
+    --cat-where: #34d399;
+    --cat-triggers: #f472b6;
+    /* "Symptom episode" (count 0) is a state, not a category — its own token. */
+    --symptom: #fb923c;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
@@ -87,10 +93,13 @@
     font-size: 17px; line-height: 1; font-weight: 800; color: var(--muted); pointer-events: none;
   }
   .cube[data-tile="when"] { gap: 4px; }
-  .cube .cube-label { font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); flex: 0 0 auto; }
-  .cube[data-cat="speech"]   .cube-label { color: var(--speech); }
-  .cube[data-cat="motor"]    .cube-label { color: var(--spit); }
-  .cube[data-cat="location"] .cube-label { color: var(--env); }
+  /* Each cube sets --cat from its category; label + selected chips derive from it. */
+  .cube[data-cat="speech"]      { --cat: var(--cat-speech); }
+  .cube[data-cat="oral"]        { --cat: var(--cat-oral); }
+  .cube[data-cat="involuntary"] { --cat: var(--cat-involuntary); }
+  .cube[data-cat="where"]       { --cat: var(--cat-where); }
+  .cube[data-cat="triggers"]    { --cat: var(--cat-triggers); }
+  .cube .cube-label { font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--cat, var(--muted)); flex: 0 0 auto; }
   /* Chip area scrolls inside the cube when a category has many options (e.g. Triggers),
      so every cube stays the same height and the 3×3 grid stays compact on small phones. */
   .cube-opts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-content: flex-start; width: 100%; flex: 1 1 auto; overflow-y: auto; scrollbar-width: none; }
@@ -101,10 +110,11 @@
   }
   .mini:active { transform: scale(.93); }
   .mini.add { border-style: dashed; color: var(--muted); }
-  .mini.on { border-color: var(--accent); background: rgba(91,140,255,.22); color: #cfe0ff; }
-  .cube[data-cat="speech"]   .mini.on { border-color: var(--speech); background: rgba(91,140,255,.22); color: #cfe0ff; }
-  .cube[data-cat="motor"]    .mini.on { border-color: var(--spit);   background: rgba(251,191,36,.22); color: #ffe7b3; }
-  .cube[data-cat="location"] .mini.on { border-color: var(--env);    background: rgba(52,211,153,.22); color: #b6f0d8; }
+  .mini.on {
+    border-color: var(--cat, var(--accent));
+    background: color-mix(in srgb, var(--cat, var(--accent)) 22%, transparent);
+    color: color-mix(in srgb, var(--cat, var(--accent)) 55%, white);
+  }
   /* When cube (time only — count moved below the grid) */
   .when-time { border: 1px solid var(--line); background: var(--bg2); color: var(--text); border-radius: 10px; padding: 8px 14px; font-size: 22px; font-weight: 800; cursor: pointer; font-variant-numeric: tabular-nums; margin-top: 4px; }
   /* Fit-count stepper below the grid */
@@ -115,9 +125,9 @@
   .log-count button { width: 42px; height: 42px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--card); color: var(--text); font-size: 24px; font-weight: 700; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .log-count button:active { transform: scale(.93); }
   .log-count b { font-size: 28px; font-weight: 800; min-width: 28px; text-align: center; font-variant-numeric: tabular-nums; }
-  .log-count .lc-sx { font-size: 12px; font-weight: 800; color: var(--spit); text-transform: uppercase; letter-spacing: .4px; }
+  .log-count .lc-sx { font-size: 12px; font-weight: 800; color: var(--symptom); text-transform: uppercase; letter-spacing: .4px; }
   .log-count:not(.symptom) .lc-sx { color: var(--muted); opacity: .7; }
-  .log-count.symptom b { color: var(--spit); }
+  .log-count.symptom b { color: var(--symptom); }
   /* Notes cube */
   .notes-open { border: 1px dashed var(--line); background: transparent; color: var(--muted); border-radius: 10px; padding: 7px 15px; font-size: 16.5px; font-weight: 700; cursor: pointer; }
   .notes-open.has { border-style: solid; border-color: var(--accent); color: #cfe0ff; }
@@ -148,9 +158,11 @@
   .fit-row { display: flex; align-items: center; gap: 12px; cursor: pointer; }
   .fit-row .time { font-size: 17px; font-weight: 700; }
   .fit-row .meta { color: var(--muted); font-size: 12.5px; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 6px; }
+  /* Overflow counter when a fit's tags don't fit in the two visible rows. */
+  .pill.more-pills { color: var(--muted); font-weight: 700; }
   .pill { background: var(--bg2); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 600; }
-  .pill.speech { color: var(--speech); } .pill.motor { color: var(--spit); } .pill.env { color: var(--env); }
-  .pill.dur { color: var(--text); } .pill.trig { color: var(--warn); }
+  .pill.speech { color: var(--cat-speech); } .pill.oral { color: var(--cat-oral); } .pill.involuntary { color: var(--cat-involuntary); } .pill.env { color: var(--cat-where); }
+  .pill.dur { color: var(--text); } .pill.trig { color: var(--cat-triggers); }
   .pill.wx { color: var(--text); }
   .wx-line { font-size: 14px; color: var(--text); padding: 4px 0; }
   .fit-row .chev { margin-left: auto; color: var(--muted); font-size: 20px; }
@@ -169,14 +181,28 @@
   #sheet.show { transform: translateY(0); }
   .sheet-grab { width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 0 auto 12px; }
   .field { margin-bottom: 16px; }
-  .field > label { display: block; font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  /* Category fields tint their heading with the category hue (others stay muted). */
+  .field > label { display: block; font-size: 12px; color: var(--cat, var(--muted)); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
     border: 1.5px solid var(--line); background: var(--card); color: var(--text);
     border-radius: 999px; padding: 9px 14px; font-size: 14px; font-weight: 600; cursor: pointer;
   }
-  .chip.on { border-color: var(--accent); background: rgba(91,140,255,.15); color: #cfe0ff; }
-  .chip.add { border-style: dashed; border-color: var(--accent); color: var(--accent); }
+  /* Editor fields inherit the same per-category hue as the grid (set --cat per field). */
+  .field.cat-speech      { --cat: var(--cat-speech); }
+  .field.cat-oral        { --cat: var(--cat-oral); }
+  .field.cat-involuntary { --cat: var(--cat-involuntary); }
+  .field.cat-where       { --cat: var(--cat-where); }
+  .field.cat-triggers    { --cat: var(--cat-triggers); }
+  /* Even unselected, a category's chips carry a faint tint of its hue (the colour base). */
+  .field[class*="cat-"] .chip:not(.add) { border-color: color-mix(in srgb, var(--cat) 40%, var(--line)); }
+  .chip.on {
+    border-color: var(--cat, var(--accent));
+    background: color-mix(in srgb, var(--cat, var(--accent)) 16%, transparent);
+    color: color-mix(in srgb, var(--cat, var(--accent)) 55%, white);
+  }
+  /* Add / Clear / Custom controls don't represent a category — keep them neutral. */
+  .chip.add { border-style: dashed; border-color: var(--line); color: var(--muted); }
   .chip .chip-x { margin-left: 7px; font-weight: 800; opacity: .75; }
   textarea {
     width: 100%; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px;
@@ -214,6 +240,22 @@
   .hbar-row .val { width: 40px; text-align: right; font-weight: 700; }
   svg { display: block; width: 100%; }
   .axis { fill: var(--muted); font-size: 9px; }
+  /* ---------- Correlation explorer ---------- */
+  .corr-controls { display: flex; gap: 10px; margin-bottom: 12px; }
+  .corr-controls label { flex: 1; font-size: 11px; color: var(--muted); font-weight: 600; }
+  .corr-select { width: 100%; margin-top: 4px; padding: 8px 10px; font-size: 13px; color: var(--text);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 10px; -webkit-appearance: none; appearance: none; }
+  .corr-meta { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .corr-meta .corr-r { color: var(--text); font-weight: 700; }
+  .corr-eff { margin-top: 8px; font-size: 13px; font-weight: 700; color: var(--text); }
+  .corr-empty { padding: 18px 4px; font-size: 13px; color: var(--muted); text-align: center; }
+  .corr-cap { margin-top: 10px; font-size: 11px; color: var(--muted); line-height: 1.3; font-style: italic; }
+  .np-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%;
+    padding: 10px 12px; margin-bottom: 8px; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 10px; text-align: left; cursor: pointer; }
+  .np-row:last-child { margin-bottom: 0; }
+  .np-row .np-text { font-size: 13px; font-weight: 600; color: var(--text); }
+  .np-row .np-meta { font-size: 11px; color: var(--muted); flex-shrink: 0; }
 
   /* ---------- Header row + sync ---------- */
   .head-row { display: flex; align-items: center; justify-content: space-between; }
@@ -286,7 +328,7 @@
   .step-btn:active { transform: scale(.92); }
   .stepper b { font-size: 30px; font-weight: 800; min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; }
   .count-badge { display: inline-block; margin-left: 8px; background: rgba(91,140,255,.18); color: #cfe0ff; border-radius: 999px; padding: 1px 9px; font-size: 14px; font-weight: 800; vertical-align: middle; }
-  .count-badge.symptom { background: rgba(251,191,36,.18); color: var(--spit); font-size: 12px; }
+  .count-badge.symptom { background: color-mix(in srgb, var(--symptom) 18%, transparent); color: var(--symptom); font-size: 12px; }
 </style>
 </head>
 <body>
@@ -597,8 +639,8 @@
   let currentFit = null;     // the fit being tagged (null = idle)
   let logBtn = null;         // centre cube, assigned in renderGrid()
 
-  // Display-category colour grouping (mirrors the old donut wedges).
-  const CUBE_CAT = { speech: "speech", oral: "motor", involuntary: "motor", where: "location" };
+  // Each grid tile carries its own category colour via data-cat (drives --cat in CSS).
+  const CUBE_CAT = { speech: "speech", oral: "oral", involuntary: "involuntary", where: "where", triggers: "triggers" };
 
   // ---- Usage ranking (cached) ----
   // Each cube shows its most-used option first. We DON'T scan records on every LOG
@@ -947,16 +989,42 @@
     reviewList.querySelectorAll("[data-fit]").forEach(function (el) {
       el.addEventListener("click", function () { openEditor(el.dataset.fit); });
     });
+    reviewList.querySelectorAll(".fit-row .meta").forEach(function (m) { clampMetaRows(m, 2); });
+  }
+
+  // Keep each fit's tag list to `maxRows` rows so cards stay scannable. Pills beyond the
+  // limit are hidden and replaced by a "+N" chip that's guaranteed to sit on the last row.
+  function clampMetaRows(meta, maxRows) {
+    const pills = Array.prototype.slice.call(meta.querySelectorAll(".pill"));
+    if (pills.length < 2) return;
+    const rowTops = [];
+    pills.forEach(function (p) { if (rowTops.indexOf(p.offsetTop) < 0) rowTops.push(p.offsetTop); });
+    if (rowTops.length <= maxRows) return;     // already fits (or layout not measurable yet)
+    rowTops.sort(function (a, b) { return a - b; });
+    const cutoff = rowTops[maxRows];           // y of the first row we must not show
+    let hidden = 0;
+    pills.forEach(function (p) { if (p.offsetTop >= cutoff) { p.style.display = "none"; hidden++; } });
+    const chip = document.createElement("span");
+    chip.className = "pill more-pills";
+    chip.textContent = "+" + hidden;
+    meta.appendChild(chip);
+    // Appending the chip may push it onto a new row — trim trailing visible pills until it fits.
+    let visible = pills.filter(function (p) { return p.style.display !== "none"; });
+    while (visible.length && chip.offsetTop >= cutoff) {
+      visible.pop().style.display = "none";
+      hidden++;
+      chip.textContent = "+" + hidden;
+    }
   }
   function fitRowHtml(f) {
     const symptom = isSymptom(f);
     const pills = [];
     if (!(symptom && f.speech === "normal")) pills.push('<span class="pill speech">' + SPEECH_LBL[f.speech] + '</span>');
-    MOTOR_FLAGS.forEach(function (m) { if (f[m.key]) pills.push('<span class="pill motor">' + m.label + '</span>'); });
+    MOTOR_FLAGS.forEach(function (m) { if (f[m.key]) pills.push('<span class="pill ' + m.group + '">' + m.label + '</span>'); });
     if (f.environment) pills.push('<span class="pill env">' + cap(f.environment) + '</span>');
     if (f.durationSeconds != null) pills.push('<span class="pill dur">' + fmtDuration(f.durationSeconds) + '</span>');
     if (!symptom && f.recoverySeconds != null) pills.push('<span class="pill dur">recovery ' + fmtDuration(f.recoverySeconds) + '</span>');
-    if (f.triggers && f.triggers.length) pills.push('<span class="pill trig">' + f.triggers.length + ' trigger' + (f.triggers.length > 1 ? "s" : "") + '</span>');
+    (f.triggers || []).forEach(function (t) { pills.push('<span class="pill trig">' + esc(t) + '</span>'); });
     if (f.lat != null) pills.push('<span class="pill">GPS</span>');
     if (hasWeather(f)) pills.push('<span class="pill wx">' + weatherEmoji(f.weatherCode) + ' ' + fmtTemp(f.tempC) + '</span>');
     if (f.by) pills.push('<span class="pill by">by ' + esc(f.by) + '</span>');
@@ -1026,16 +1094,16 @@
         '<button class="step-btn" id="countMinus" aria-label="Fewer">&minus;</button>' +
         '<b id="countVal">' + f.count + '</b>' +
         '<button class="step-btn" id="countPlus" aria-label="More">+</button></div></div>' +
-      '<div class="field"><label>Speech</label><div class="chips">' + speechChips + '</div></div>' +
-      '<div class="field"><label>Oral</label><div class="chips">' + motorGroupChips("oral") + '</div></div>' +
-      '<div class="field"><label>Involuntary</label><div class="chips">' + motorGroupChips("involuntary") + '</div></div>' +
-      '<div class="field"><label>Environment</label><div class="chips">' + envChips + '</div></div>' +
+      '<div class="field cat-speech"><label>Speech</label><div class="chips">' + speechChips + '</div></div>' +
+      '<div class="field cat-oral"><label>Oral</label><div class="chips">' + motorGroupChips("oral") + '</div></div>' +
+      '<div class="field cat-involuntary"><label>Involuntary</label><div class="chips">' + motorGroupChips("involuntary") + '</div></div>' +
+      '<div class="field cat-where"><label>Environment</label><div class="chips">' + envChips + '</div></div>' +
       '<div class="field"><label>' + (symptom ? "Symptom length" : "Duration") + '</label><div class="chips">' + durChips + customDurChip +
         '<button class="chip add" id="durCustom">Custom…</button></div></div>' +
       (symptom ? "" :
         '<div class="field"><label>Recovery (symptoms after fit)</label><div class="chips">' + recChips +
         '<button class="chip add" id="recClear">Clear</button></div></div>') +
-      '<div class="field"><label>Suspected triggers</label><div class="chips">' + trigChips +
+      '<div class="field cat-triggers"><label>Suspected triggers</label><div class="chips">' + trigChips +
         '<button class="chip add" id="trigAdd">+ Add</button></div></div>' +
       '<div class="field"><label>Notes</label><textarea id="notesBox" placeholder="Anything else worth remembering…">' + esc(f.notes || "") + '</textarea></div>' +
       (hasWeather(f)
@@ -1257,18 +1325,17 @@
     const fitsList = fitsActive();
     const symList = symptomsActive();
 
-    // --- Exclude extreme outliers (3×IQR) from averages & totals ---
+    // --- Exclude extreme outliers (3×IQR) from every stat AND chart ---
+    // Outliers are defined once, at the record level (by fit count), and removed from all
+    // aggregation just like the stats. Affected days/hours still get an orange tick so a
+    // freak record isn't silently hidden.
     let excluded = 0;
-    // Fit-count outliers (e.g. a freak high-count episode) skew totals + per-day.
     const countFence = outlierFence(fitsList.map(fitCount));
-    const fitsForStats = countFence
-      ? fitsList.filter(function (f) {
-          const ok = fitCount(f) >= countFence.lo && fitCount(f) <= countFence.hi;
-          if (!ok) excluded++;
-          return ok;
-        })
-      : fitsList;
-    const total = sumCount(fitsForStats);
+    function isCountOutlier(f) { return !!countFence && (fitCount(f) < countFence.lo || fitCount(f) > countFence.hi); }
+    const fitOutliers = fitsList.filter(isCountOutlier);
+    const cleanFits = fitsList.filter(function (f) { return !isCountOutlier(f); });
+    excluded += fitOutliers.length;
+    const total = sumCount(cleanFits);
     const days = new Set(list.map(function (f) { return startOfDay(f.ts); })).size;
     const perDay = (total / Math.max(1, days)).toFixed(1);
     // Duration outliers (e.g. a mistyped length) skew average length.
@@ -1292,18 +1359,20 @@
       '</div>';
     if (excluded > 0) {
       html += '<div class="outlier-note">Excludes ' + excluded + ' extreme outlier' +
-        (excluded === 1 ? '' : 's') + ' (3×IQR) from averages &amp; totals. Charts cap and mark outlier bars in orange.</div>';
+        (excluded === 1 ? '' : 's') + ' (3×IQR) from all stats &amp; charts.</div>';
     }
 
-    html += '<div class="chart-card"><div class="title">Frequency</div><div class="sub">Fits per day, last 14 days</div>' + barChartDays(fitsList, true) + '</div>';
-    html += '<div class="chart-card"><div class="title">Time of day</div><div class="sub">When fits tend to happen</div>' + barChartHours() + '</div>';
+    html += '<div class="chart-card"><div class="title">Frequency</div><div class="sub">Fits per day, last 14 days</div>' + barChartDays(cleanFits, true) + '</div>';
+    html += '<div class="chart-card"><div class="title">Time of day</div><div class="sub">When fits tend to happen</div>' + barChartHours(cleanFits) + '</div>';
     if (symList.length) {
       html += '<div class="chart-card"><div class="title">Symptoms — frequency</div><div class="sub">Symptom episodes per day, last 14 days</div>' + barChartDays(symList, false) + '</div>';
       html += '<div class="chart-card"><div class="title">Symptom types</div><div class="sub">Share of symptom episodes with each tag</div>' + hbars(symptomTypeRows(symList), "No symptoms tagged on episodes yet.", symList.length) + '</div>';
     }
-    const totalFitsAll = sumCount(fitsList);
-    html += '<div class="chart-card"><div class="title">Triggers</div><div class="sub">Share of fits tagged with each trigger</div>' + hbars(countBy(function (f) { return f.triggers; }, fitsList), "No triggers tagged yet — add them in Review.", totalFitsAll) + '</div>';
-    html += '<div class="chart-card"><div class="title">Environment</div><div class="sub">Share of fits in each environment</div>' + hbars(countBy(function (f) { return f.environment ? [cap(f.environment)] : []; }, fitsList), "No environment tagged yet.", totalFitsAll) + '</div>';
+    const totalFitsAll = sumCount(cleanFits);
+    html += '<div class="chart-card"><div class="title">Triggers</div><div class="sub">Share of fits tagged with each trigger</div>' + hbars(countBy(function (f) { return f.triggers; }, cleanFits), "No triggers tagged yet — add them in Review.", totalFitsAll) + '</div>';
+    html += '<div class="chart-card"><div class="title">Environment</div><div class="sub">Share of fits in each environment</div>' + hbars(countBy(function (f) { return f.environment ? [cap(f.environment)] : []; }, cleanFits), "No environment tagged yet.", totalFitsAll) + '</div>';
+
+    html += '<div id="corrSection">' + corrSectionHTML() + '</div>';
 
     const needWeather = active().filter(function (f) { return f.lat != null && f.lng != null && !hasWeather(f); }).length;
     html += '<h2>Export &amp; backup</h2><div class="card">' +
@@ -1328,6 +1397,8 @@
     document.getElementById("jsonBtn").addEventListener("click", function () { downloadFile(JSON.stringify(active(), null, 2), "fitful.json", "application/json"); });
     const backfillBtn = document.getElementById("backfillBtn");
     if (backfillBtn) backfillBtn.addEventListener("click", backfillWeather);
+    bindCorrEvents();
+    ensureDayTemps();
   }
 
   function countBy(extractFn, list) {
@@ -1359,9 +1430,9 @@
     }
     return svgBars(labels, vals, function (i) { return i % 2 === 0; });
   }
-  function barChartHours() {
+  function barChartHours(list) {
     const vals = new Array(24).fill(0);
-    fitsActive().forEach(function (f) { vals[new Date(f.ts).getHours()] += fitCount(f); });
+    (list || fitsActive()).forEach(function (f) { vals[new Date(f.ts).getHours()] += fitCount(f); });
     const labels = vals.map(function (_, h) { return h; });
     return svgBars(labels, vals, function (i) { return i % 6 === 0; }, function (h) { return h + "h"; });
   }
@@ -1375,22 +1446,352 @@
   }
   function svgBars(labels, vals, showLabelFn, labelFmt) {
     const W = 320, H = 130, padB = 18, padT = 16, n = vals.length;
-    // Cap the y-axis to the largest non-outlier value so one freak day/hour
-    // doesn't squash every other bar. Outlier bars clamp to full height + go orange.
-    const fence = outlierFence(vals);
-    const capped = fence ? vals.filter(function (v) { return v <= fence.hi; }) : vals;
-    const max = Math.max(1, Math.max.apply(null, capped.length ? capped : vals));
+    const usable = H - padB - padT;
+    // Outlier records are removed upstream, so the chart simply plots the clean data
+    // against its true max.
+    const max = Math.max(1, Math.max.apply(null, vals.concat(0)));
     const gap = 3, bw = (W - gap * (n - 1)) / n;
     let bars = "";
     vals.forEach(function (v, i) {
-      const isOut = fence && v > fence.hi;
-      const h = v === 0 ? 0 : Math.max(2, (Math.min(1, v / max) * (H - padB - padT)));
+      const h = v === 0 ? 0 : Math.max(2, (v / max) * usable);
       const x = i * (bw + gap), y = H - padB - h;
-      bars += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2" fill="' + (v ? (isOut ? "#f0883e" : "#5b8cff") : "#2a3149") + '"></rect>';
-      if (v) bars += '<text class="axis" x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 3).toFixed(1) + '" text-anchor="middle" fill="' + (isOut ? "#f0883e" : "#9aa3bd") + '">' + v + '</text>';
+      if (v) bars += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2" fill="#5b8cff"></rect>';
+      if (v) bars += '<text class="axis" x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 3).toFixed(1) + '" text-anchor="middle" fill="#9aa3bd">' + v + '</text>';
       if (showLabelFn(i)) bars += '<text class="axis" x="' + (x + bw / 2).toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle">' + (labelFmt ? labelFmt(labels[i]) : labels[i]) + '</text>';
     });
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" height="130">' + bars + '</svg>';
+  }
+
+  // ---------------- Correlation explorer (Insights) ----------------
+  // One configurable chart + an auto-surfaced "notable patterns" panel. Reuses svgBars/hbars
+  // and the existing outlier logic. Temperature uses a backfilled daily-mean map so zero-fit
+  // days still have an x value; all other dimensions derive from the per-fit records.
+  const CORR_MIN_DAYS = 10;   // min usable days for a continuous/time chart or r value
+  const CORR_MIN_SPLIT = 3;   // min days in each side of a with/without comparison
+  let corrSel = (function () {
+    let s = {};
+    try { s = JSON.parse(localStorage.getItem("fitful.corrSel")) || {}; } catch (e) { s = {}; }
+    if (s.target !== "symptoms") s.target = "fits";
+    if (!s.dim) s.dim = "temp";
+    return s;
+  })();
+  function saveCorrSel() { try { localStorage.setItem("fitful.corrSel", JSON.stringify(corrSel)); } catch (e) {} }
+  function avgOf(arr) { return arr.length ? arr.reduce(function (a, b) { return a + b; }, 0) / arr.length : 0; }
+
+  function pearson(xs, ys) {
+    const n = xs.length;
+    if (n < 3) return null;
+    let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+    for (let i = 0; i < n; i++) { const x = xs[i], y = ys[i]; sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y; }
+    const cov = n * sxy - sx * sy;
+    const dx = Math.sqrt(n * sxx - sx * sx), dy = Math.sqrt(n * syy - sy * sy);
+    if (dx === 0 || dy === 0) return null;
+    return cov / (dx * dy);
+  }
+  function corrStrengthLabel(r) {
+    if (r == null) return "";
+    const a = Math.abs(r);
+    const s = a < 0.2 ? "very weak" : a < 0.4 ? "weak" : a < 0.6 ? "moderate" : a < 0.8 ? "strong" : "very strong";
+    return s + " " + (r >= 0 ? "positive" : "negative");
+  }
+  function binValues(pairs, nBins) {
+    if (!pairs.length) return [];
+    const xs = pairs.map(function (p) { return p.x; });
+    const min = Math.min.apply(null, xs), max = Math.max.apply(null, xs);
+    if (max === min) return [{ label: Math.round(min) + "", value: avgOf(pairs.map(function (p) { return p.y; })), n: pairs.length }];
+    const w = (max - min) / nBins, out = [];
+    for (let b = 0; b < nBins; b++) {
+      const lo = min + b * w, hiEdge = min + (b + 1) * w, hi = b === nBins - 1 ? max + 1e-9 : hiEdge;
+      const ys = pairs.filter(function (p) { return p.x >= lo && p.x < hi; }).map(function (p) { return p.y; });
+      out.push({ label: Math.round(lo) + "–" + Math.round(hiEdge), value: ys.length ? avgOf(ys) : 0, n: ys.length });
+    }
+    return out;
+  }
+
+  // Window = data span capped at 90 days (max single Open-Meteo call).
+  function corrWindowDays() {
+    const list = active();
+    if (!list.length) return 0;
+    const earliest = Math.min.apply(null, list.map(function (f) { return f.ts; }));
+    const days = Math.ceil((Date.now() - startOfDay(earliest)) / 86400000) + 1;
+    return Math.min(90, Math.max(1, days));
+  }
+  // Per-day buckets over the window, newest last; includes zero-activity days.
+  function dayTotals(list, useCount, nDays) {
+    const today = startOfDay(Date.now()), out = [];
+    for (let i = nDays - 1; i >= 0; i--) {
+      const dayTs = today - i * 86400000;
+      const sameDay = list.filter(function (f) { return startOfDay(f.ts) === dayTs; });
+      out.push({ dayTs: dayTs, dateStr: localDateStr(dayTs), total: useCount ? sumCount(sameDay) : sameDay.length, fits: sameDay });
+    }
+    return out;
+  }
+  // Active fits with extreme-count outliers removed (respects the outlier toggle).
+  function cleanFitsActive() {
+    const fl = fitsActive();
+    const fence = outlierFence(fl.map(fitCount));
+    if (!fence) return fl;
+    return fl.filter(function (f) { const c = fitCount(f); return c >= fence.lo && c <= fence.hi; });
+  }
+  function corrTargetList(target) { return target === "symptoms" ? symptomsActive() : cleanFitsActive(); }
+  function corrUnit(target) { return target === "symptoms" ? "episodes" : "fits"; }
+
+  // Home-base location = mode of rounded fit lat/lng. Used only for the daily-temp backfill.
+  function homeBaseLatLng() {
+    const m = {};
+    active().forEach(function (f) {
+      if (f.lat == null || f.lng == null) return;
+      const k = f.lat.toFixed(2) + "," + f.lng.toFixed(2);
+      m[k] = (m[k] || 0) + 1;
+    });
+    let best = null, bestN = 0;
+    Object.keys(m).forEach(function (k) { if (m[k] > bestN) { bestN = m[k]; best = k; } });
+    if (!best) return null;
+    const p = best.split(",");
+    return { lat: +p[0], lng: +p[1] };
+  }
+  // Daily mean temps for the window in ONE call. Open-Meteo forecast endpoint supports
+  // past_days up to 92, covering the whole window incl. zero-fit days.
+  function fetchDayTemps(lat, lng, nDays) {
+    const past = Math.min(92, Math.max(1, nDays));
+    const url = "https://api.open-meteo.com/v1/forecast?latitude=" + lat.toFixed(4) + "&longitude=" + lng.toFixed(4) +
+      "&daily=temperature_2m_mean&past_days=" + past + "&forecast_days=1&timezone=auto";
+    return fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !j.daily || !j.daily.time) return null;
+      const map = {};
+      j.daily.time.forEach(function (d, i) { const t = j.daily.temperature_2m_mean[i]; if (t != null) map[d] = +(+t).toFixed(1); });
+      return map;
+    }).catch(function () { return null; });
+  }
+  let dayTempsState = null, dayTempsLoaded = false, dayTempsFetching = false;
+  function loadDayTemps() {
+    if (!dayTempsLoaded) {
+      try { dayTempsState = JSON.parse(localStorage.getItem("fitful.dayTemps")) || null; } catch (e) { dayTempsState = null; }
+      dayTempsLoaded = true;
+    }
+    return dayTempsState;
+  }
+  function dayTempsFresh(needDays) {
+    const s = loadDayTemps(), home = homeBaseLatLng();
+    if (!s || !s.meta || !home) return false;
+    return s.meta.lat === home.lat && s.meta.lng === home.lng &&
+      s.meta.to === localDateStr(Date.now()) && (s.meta.days || 0) >= needDays;
+  }
+  function ensureDayTemps() {
+    const need = corrWindowDays();
+    if (!need || dayTempsFetching || dayTempsFresh(need)) return;
+    const home = homeBaseLatLng();
+    if (!home) return;
+    dayTempsFetching = true;
+    fetchDayTemps(home.lat, home.lng, need).then(function (map) {
+      dayTempsFetching = false;
+      if (map) {
+        dayTempsState = { map: map, meta: { lat: home.lat, lng: home.lng, fetchedAt: Date.now(), to: localDateStr(Date.now()), days: need } };
+        dayTempsLoaded = true;
+        try { localStorage.setItem("fitful.dayTemps", JSON.stringify(dayTempsState)); } catch (e) {}
+      }
+      if (views.insights && views.insights.classList.contains("active") && document.getElementById("corrSection")) refreshCorr();
+    });
+  }
+
+  // Dimension catalogue. Static weather/time/environment + dynamic per-tag binaries.
+  function corrDims() {
+    const dims = [
+      { id: "temp", label: "Temperature", group: "Weather", type: "continuous" },
+      { id: "feels", label: "Feels-like", group: "Weather", type: "continuous" },
+      { id: "humidity", label: "Humidity", group: "Weather", type: "continuous" },
+      { id: "condition", label: "Condition", group: "Weather", type: "categorical" },
+      { id: "timeofday", label: "Time of day", group: "Time", type: "timeofday" },
+      { id: "dayofweek", label: "Day of week", group: "Time", type: "dayofweek" },
+      { id: "trend", label: "Date trend", group: "Time", type: "trend" },
+      { id: "environment", label: "Environment", group: "Environment", type: "categorical" },
+    ];
+    const trigSet = {};
+    fitsActive().forEach(function (f) { (f.triggers || []).forEach(function (t) { trigSet[t] = 1; }); });
+    Object.keys(trigSet).sort().forEach(function (t) { dims.push({ id: "trig:" + t, label: t, group: "Tags", type: "binary", tag: { kind: "trigger", key: t } }); });
+    MOTOR_FLAGS.forEach(function (mf) { dims.push({ id: "motor:" + mf.key, label: mf.label, group: "Tags", type: "binary", tag: { kind: "motor", key: mf.key } }); });
+    dims.push({ id: "speech", label: "Speech affected", group: "Tags", type: "binary", tag: { kind: "speech" } });
+    return dims;
+  }
+  function dayHasTag(d, tag) {
+    return d.fits.some(function (f) {
+      if (tag.kind === "trigger") return (f.triggers || []).indexOf(tag.key) >= 0;
+      if (tag.kind === "motor") return !!f[tag.key];
+      if (tag.kind === "speech") return f.speech && f.speech !== "normal";
+      return false;
+    });
+  }
+
+  const corrCaption = '<div class="corr-cap">Association, not causation — patterns can be coincidental.</div>';
+  function corrNote(msg) { return '<div class="corr-empty">' + esc(msg) + "</div>"; }
+  function corrMeta(r, n, unit) {
+    let s = '<div class="corr-meta">';
+    if (r != null) s += '<span class="corr-r">r = ' + r.toFixed(2) + "</span> <span>" + corrStrengthLabel(r) + "</span> · ";
+    s += "<span>" + n + " " + (unit || "days") + "</span></div>";
+    return s;
+  }
+
+  function renderCorrChart(dimId, target) {
+    const dims = corrDims();
+    let dim = null;
+    dims.forEach(function (d) { if (d.id === dimId) dim = d; });
+    if (!dim) dim = dims[0];
+    const useCount = target !== "symptoms";
+    const list = corrTargetList(target);
+    const nDays = corrWindowDays();
+    const unit = corrUnit(target);
+
+    if (dim.type === "continuous") {
+      const totals = dayTotals(list, useCount, nDays), pairs = [];
+      if (dim.id === "temp") {
+        const s = loadDayTemps();
+        if (!s || !s.map) return corrNote(homeBaseLatLng() ? "Loading temperatures…" : "Needs location data to backfill temperatures.") + corrCaption;
+        totals.forEach(function (d) { const x = s.map[d.dateStr]; if (x != null) pairs.push({ x: x, y: d.total }); });
+      } else {
+        const field = dim.id === "feels" ? "apparentC" : "humidity";
+        totals.forEach(function (d) {
+          const vals = d.fits.map(function (f) { return f[field]; }).filter(function (v) { return v != null; });
+          if (vals.length) pairs.push({ x: avgOf(vals), y: d.total });
+        });
+      }
+      if (pairs.length < CORR_MIN_DAYS) return corrNote("Not enough data yet (" + pairs.length + "/" + CORR_MIN_DAYS + " days).") + corrCaption;
+      const r = pearson(pairs.map(function (p) { return p.x; }), pairs.map(function (p) { return p.y; }));
+      const bins = binValues(pairs, 5);
+      return svgBars(bins.map(function (b) { return b.label; }), bins.map(function (b) { return +b.value.toFixed(1); }), function () { return true; }) +
+        corrMeta(r, pairs.length, "days") + corrCaption;
+    }
+
+    if (dim.type === "categorical") {
+      const extract = dim.id === "environment"
+        ? function (f) { return f.environment ? [cap(f.environment)] : []; }
+        : function (f) { return f.weatherCode != null ? [weatherLabel(f.weatherCode)] : []; };
+      const rows = countBy(extract, list);
+      const denom = useCount ? sumCount(list) : list.length;
+      if (denom < CORR_MIN_DAYS) return corrNote("Not enough data yet.") + corrCaption;
+      return hbars(rows, "No " + dim.label.toLowerCase() + " data tagged yet.", denom) + corrMeta(null, denom, unit) + corrCaption;
+    }
+
+    if (dim.type === "binary") {
+      const totals = dayTotals(list, useCount, nDays);
+      const activeDays = totals.filter(function (d) { return d.total > 0; });
+      const withDays = activeDays.filter(function (d) { return dayHasTag(d, dim.tag); });
+      const withoutDays = activeDays.filter(function (d) { return !dayHasTag(d, dim.tag); });
+      if (withDays.length < CORR_MIN_SPLIT || withoutDays.length < CORR_MIN_SPLIT)
+        return corrNote("Not enough data to compare (need ≥" + CORR_MIN_SPLIT + " days each side).") + corrCaption;
+      const aw = avgOf(withDays.map(function (d) { return d.total; }));
+      const awo = avgOf(withoutDays.map(function (d) { return d.total; }));
+      const ratio = awo > 0 ? aw / awo : null;
+      let eff = "";
+      if (ratio != null) eff = '<div class="corr-eff">' + (ratio >= 1 ? "+" + Math.round((ratio - 1) * 100) + "% more" : "−" + Math.round((1 - ratio) * 100) + "% fewer") +
+        " " + unit + "/day on “" + esc(dim.label) + "” days</div>";
+      return svgBars(["With", "Without"], [+aw.toFixed(1), +awo.toFixed(1)], function () { return true; }) +
+        eff + corrMeta(null, withDays.length + withoutDays.length, "days") + corrCaption;
+    }
+
+    if (dim.type === "timeofday") {
+      if (list.length < CORR_MIN_DAYS) return corrNote("Not enough data yet.") + corrCaption;
+      return barChartHours(list) + corrMeta(null, list.length, unit) + corrCaption;
+    }
+
+    if (dim.type === "dayofweek") {
+      const totals = dayTotals(list, useCount, nDays);
+      if (totals.filter(function (d) { return d.total > 0; }).length < CORR_MIN_DAYS) return corrNote("Not enough data yet.") + corrCaption;
+      const sums = new Array(7).fill(0), counts = new Array(7).fill(0);
+      totals.forEach(function (d) { const w = new Date(d.dayTs).getDay(); sums[w] += d.total; counts[w]++; });
+      const order = [1, 2, 3, 4, 5, 6, 0], names = { 0: "Sun", 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat" };
+      return svgBars(order.map(function (w) { return names[w]; }), order.map(function (w) { return counts[w] ? +(sums[w] / counts[w]).toFixed(1) : 0; }), function () { return true; }) +
+        corrMeta(null, nDays, "days") + corrCaption;
+    }
+
+    if (dim.type === "trend") {
+      const totals = dayTotals(list, useCount, nDays);
+      if (totals.filter(function (d) { return d.total > 0; }).length < CORR_MIN_DAYS) return corrNote("Not enough data yet.") + corrCaption;
+      const ys = totals.map(function (d) { return d.total; }), xs = totals.map(function (_, i) { return i; });
+      const r = pearson(xs, ys), step = Math.max(1, Math.ceil(nDays / 7));
+      return svgBars(totals.map(function (d) { return new Date(d.dayTs).toLocaleDateString([], { day: "numeric" }); }), ys, function (i) { return i % step === 0; }) +
+        corrMeta(r, nDays, "days") + corrCaption;
+    }
+    return corrNote("No data.") + corrCaption;
+  }
+
+  // Auto-surface the strongest associations (above a strength + sample-size threshold).
+  function notablePatterns(target) {
+    const useCount = target !== "symptoms";
+    const list = corrTargetList(target), nDays = corrWindowDays(), unit = corrUnit(target);
+    const totals = dayTotals(list, useCount, nDays), out = [];
+    const s = loadDayTemps();
+    if (s && s.map) {
+      const pairs = [];
+      totals.forEach(function (d) { const x = s.map[d.dateStr]; if (x != null) pairs.push({ x: x, y: d.total }); });
+      if (pairs.length >= CORR_MIN_DAYS) {
+        const r = pearson(pairs.map(function (p) { return p.x; }), pairs.map(function (p) { return p.y; }));
+        if (r != null && Math.abs(r) >= 0.4)
+          out.push({ dim: "temp", text: (r > 0 ? "Warmer" : "Cooler") + " days ↔ more " + unit, meta: corrStrengthLabel(r) + ", " + pairs.length + " days", score: Math.abs(r) });
+      }
+    }
+    if (totals.filter(function (d) { return d.total > 0; }).length >= CORR_MIN_DAYS) {
+      const r = pearson(totals.map(function (_, i) { return i; }), totals.map(function (d) { return d.total; }));
+      if (r != null && Math.abs(r) >= 0.4)
+        out.push({ dim: "trend", text: (r > 0 ? "Increasing" : "Decreasing") + " over time", meta: corrStrengthLabel(r) + ", " + nDays + " days", score: Math.abs(r) });
+    }
+    corrDims().filter(function (d) { return d.type === "binary"; }).forEach(function (dim) {
+      const activeDays = totals.filter(function (d) { return d.total > 0; });
+      const w = activeDays.filter(function (d) { return dayHasTag(d, dim.tag); });
+      const wo = activeDays.filter(function (d) { return !dayHasTag(d, dim.tag); });
+      if (w.length < CORR_MIN_SPLIT || wo.length < CORR_MIN_SPLIT) return;
+      const aw = avgOf(w.map(function (d) { return d.total; })), awo = avgOf(wo.map(function (d) { return d.total; }));
+      const ratio = awo > 0 ? aw / awo : null;
+      if (ratio != null && (ratio >= 1.5 || ratio <= 0.66))
+        out.push({ dim: dim.id, text: "“" + dim.label + "” days ↔ " + (ratio >= 1 ? "more" : "fewer") + " " + unit,
+          meta: (ratio >= 1 ? "+" + Math.round((ratio - 1) * 100) : "−" + Math.round((1 - ratio) * 100)) + "%, " + (w.length + wo.length) + " days", score: Math.abs(Math.log(ratio)) });
+    });
+    out.sort(function (a, b) { return b.score - a.score; });
+    return out.slice(0, 3);
+  }
+
+  function corrSectionHTML() {
+    const dims = corrDims();
+    if (!dims.some(function (d) { return d.id === corrSel.dim; })) corrSel.dim = "temp";
+    let targetSel = '<select id="corrTarget" class="corr-select">' +
+      '<option value="fits"' + (corrSel.target === "fits" ? " selected" : "") + ">Fits</option>" +
+      '<option value="symptoms"' + (corrSel.target === "symptoms" ? " selected" : "") + ">Symptom episodes</option></select>";
+    let dimSel = '<select id="corrDim" class="corr-select">';
+    ["Weather", "Time", "Environment", "Tags"].forEach(function (g) {
+      const inG = dims.filter(function (d) { return d.group === g; });
+      if (!inG.length) return;
+      dimSel += '<optgroup label="' + g + '">';
+      inG.forEach(function (d) { dimSel += '<option value="' + esc(d.id) + '"' + (d.id === corrSel.dim ? " selected" : "") + ">" + esc(d.label) + "</option>"; });
+      dimSel += "</optgroup>";
+    });
+    dimSel += "</select>";
+
+    const np = notablePatterns(corrSel.target);
+    let npHtml = "";
+    if (np.length) {
+      npHtml = '<div class="chart-card"><div class="title">Notable patterns</div>' +
+        '<div class="sub">Strongest associations in your data — tap to explore</div>' +
+        np.map(function (p) { return '<button class="np-row" data-dim="' + esc(p.dim) + '"><span class="np-text">' + esc(p.text) + '</span><span class="np-meta">' + esc(p.meta) + "</span></button>"; }).join("") +
+        "</div>";
+    }
+    const explore = '<div class="chart-card"><div class="title">Explore correlations</div>' +
+      '<div class="sub">How ' + (corrSel.target === "symptoms" ? "symptom episodes" : "fit frequency") + " relate to a chosen factor</div>" +
+      '<div class="corr-controls"><label>Show ' + targetSel + "</label><label>vs " + dimSel + "</label></div>" +
+      '<div id="corrChartArea">' + renderCorrChart(corrSel.dim, corrSel.target) + "</div></div>";
+    return npHtml + explore;
+  }
+  function refreshCorr() {
+    const sec = document.getElementById("corrSection");
+    if (!sec) return;
+    sec.innerHTML = corrSectionHTML();
+    bindCorrEvents();
+  }
+  function bindCorrEvents() {
+    const t = document.getElementById("corrTarget"), d = document.getElementById("corrDim");
+    if (t) t.addEventListener("change", function () { corrSel.target = t.value; saveCorrSel(); refreshCorr(); });
+    if (d) d.addEventListener("change", function () { corrSel.dim = d.value; saveCorrSel(); refreshCorr(); });
+    document.querySelectorAll("#corrSection .np-row").forEach(function (b) {
+      b.addEventListener("click", function () { corrSel.dim = b.getAttribute("data-dim"); saveCorrSel(); refreshCorr(); });
+    });
   }
 
   // ---------------- Export ----------------
