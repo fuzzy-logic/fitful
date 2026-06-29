@@ -388,7 +388,7 @@
   // ---------------- Storage ----------------
   const FITS_KEY = "fitrack.fits.v1";
   const TRIG_KEY = "fitrack.triggers.v1";
-  const SEED_TRIGGERS = ["Stress", "Tiredness", "Poor sleep", "Hunger", "Sensory overload", "Emotions", "Heat", "Exertion"];
+  const SEED_TRIGGERS = ["Stress", "Tired", "Poor sleep", "Hunger", "Sensory overload", "Emotions", "Heat", "Exertion"];
 
   function load(key, fallback) {
     try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
@@ -594,11 +594,11 @@
   // Boolean Motor symptom flags — drives the grid, editor, Review pills, summary and CSV.
   // Add a future Motor flag by adding one entry here (grouped oral/involuntary for the grid).
   const MOTOR_FLAGS = [
-    { key: "spitting",   label: "Spitting",  csv: "spitting",      group: "oral" },
-    { key: "dribbling",  label: "Dribbling", csv: "dribbling",     group: "oral" },
-    { key: "mouthClick", label: "Clicking",  csv: "mouth_click",   group: "oral" },
-    { key: "mouthPop",   label: "Popping",   csv: "mouth_pop",     group: "oral" },
-    { key: "laughing",   label: "Laughing",  csv: "laughing",      group: "involuntary" },
+    { key: "spitting",   label: "Spit",      csv: "spitting",      group: "oral" },
+    { key: "dribbling",  label: "Drool",     csv: "dribbling",     group: "oral" },
+    { key: "mouthClick", label: "Click",     csv: "mouth_click",   group: "oral" },
+    { key: "mouthPop",   label: "Pop",       csv: "mouth_pop",     group: "oral" },
+    { key: "laughing",   label: "Laugh",     csv: "laughing",      group: "involuntary" },
     { key: "arm",        label: "Arms",      csv: "arm_movements", group: "involuntary" },
     { key: "legs",       label: "Legs",      csv: "legs",          group: "involuntary" },
     { key: "head",       label: "Head",      csv: "head",          group: "involuntary" },
@@ -2062,20 +2062,37 @@
     }
   })();
 
-  // One-time terminology migration: apraxic → disturbed, "Strong emotion" → "Emotions".
+  // One-time terminology migration: apraxic → disturbed, "Strong emotion" → "Emotions",
+  // "Tiredness" → "Tired". Trigger renames map both stored records and the vocab so old
+  // tags don't split from the renamed option in summaries/insights.
   (function migrateTerms() {
+    var TRIG_RENAMES = { "Strong emotion": "Emotions", "Tiredness": "Tired" };
     var fitsChanged = false, trigChanged = false;
     fits.forEach(function (f) {
       var touched = false;
       if (f.speech === "apraxic") { f.speech = "disturbed"; touched = true; }
-      if (f.triggers && f.triggers.indexOf("Strong emotion") >= 0) {
-        f.triggers = f.triggers.map(function (t) { return t === "Strong emotion" ? "Emotions" : t; });
-        touched = true;
+      if (f.triggers) {
+        var seen = {}, mapped = [];
+        f.triggers.forEach(function (t) {
+          var name = TRIG_RENAMES[t] || t;
+          if (TRIG_RENAMES[t]) touched = true;
+          if (!seen[name]) { seen[name] = true; mapped.push(name); }
+          else touched = true; // collapsed a duplicate created by the rename
+        });
+        f.triggers = mapped;
       }
       if (touched) { f.updatedAt = Date.now(); markDirty(f.id); fitsChanged = true; }
     });
-    var vi = triggerVocab.indexOf("Strong emotion");
-    if (vi >= 0) { triggerVocab[vi] = "Emotions"; trigChanged = true; }
+    Object.keys(TRIG_RENAMES).forEach(function (oldName) {
+      var vi = triggerVocab.indexOf(oldName);
+      if (vi >= 0) {
+        var newName = TRIG_RENAMES[oldName];
+        // Avoid a duplicate if the renamed value already exists in the vocab.
+        if (triggerVocab.indexOf(newName) >= 0) triggerVocab.splice(vi, 1);
+        else triggerVocab[vi] = newName;
+        trigChanged = true;
+      }
+    });
     if (fitsChanged) persistFits();
     if (trigChanged) persistTriggers();
   })();
